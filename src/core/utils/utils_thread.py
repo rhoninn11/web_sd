@@ -44,13 +44,13 @@ class ConnectionThread(ThreadWrap):
             return 0
 
         data = in_queue.dequeue_item()
-        connection.sendall(obj2pickle2bytes(data), socket.MSG_WAITALL)
-        print("wysłano")
+        msg_bytes = obj2json2bytes(data)
+        print(f"+++ wysyłanie {len(msg_bytes)}b")
+        connection.sendall(msg_bytes, socket.MSG_WAITALL)
         return 1
 
     def revice_data(self, connection):
         data = connection.recv(4)
-        print("odebrano init")
         if not data:
             return None
         byte_size = int.from_bytes(data, byteorder="little")
@@ -62,11 +62,12 @@ class ConnectionThread(ThreadWrap):
                 return None
             data += packet
 
-        print(f"odebrano {4 + byte_size}")
-        return bytes2pickle2obj(data)
+        return data
 
     def recive(self, connection, out_queue):
-        new_data = self.revice_data(connection)
+        msg_bytes = self.revice_data(connection)
+        print(f"+++ odebrano {len(msg_bytes)}b")
+        new_data = bytes2json2obj(msg_bytes)
         if new_data is None:
             return -1000
         

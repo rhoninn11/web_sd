@@ -33,6 +33,7 @@ class DiffusionServerThread(ConnectionThread):
                 try:
                     print("+++ new client")
                     self.connection_loop(connection, self.worker.out_queue, self.worker.in_queue)
+                    print("+++ client left")
                 finally:
                     connection.close()
 

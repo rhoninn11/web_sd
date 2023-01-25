@@ -134,7 +134,6 @@ class CentralLogicThread(ThreadWrap):
         while self.run_cond:
             progress = 0
             progress += self.manage_config_update()
-            self.probe()
             progress += self.manage_flow()
 
             if not progress:

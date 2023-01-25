@@ -1,4 +1,5 @@
-import time, socket, base64, signal
+import time
+import numpy
 from PIL import Image
 
 # from src.core.utils.utils_thread import ConnectionThread
@@ -44,8 +45,8 @@ class ClientLogicThread(ThreadWrap):
         self.on_finish = callback
 
     def prepare_command(self):
-        init_img_name = "inputs/init_img_512_512.png"
-        init_img = Image.open(init_img_name)
+        a = numpy.random.rand(30,30,3) * 255
+        init_img = Image.fromarray(a.astype('uint8')).convert('RGB')
 
         command = { "img2img": {
                 "img": pil2simple_data(init_img)  
@@ -60,16 +61,14 @@ class ClientLogicThread(ThreadWrap):
         self.client_wrapper.send_to_server(command)
         
         result = self.client_wrapper.get_server_info()
-        while not result:
-            print("refresh")
+        while not result and self.run_cond:
             time.sleep(0.1)
             result = self.client_wrapper.get_server_info()
 
-
-        print(result)
-        simple_data_img = result["img2img"]["img"]
-        pil_img = simple_data2pil(simple_data_img)
-        pil_img.save('outputs/czwartek.png')
+        if result:
+            simple_data_img = result["img2img"]["img"]
+            pil_img = simple_data2pil(simple_data_img)
+            pil_img.save('outputs/czwartek.png')
 
     def run(self):
         self.script()

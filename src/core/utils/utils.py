@@ -9,7 +9,6 @@ def obj2json2bytes(obj, verbose=False):
     obj_bytes = bytes(json_txt, 'utf-8')
     len_bytes = data_len.to_bytes(4, 'little')
     data_to_send = len_bytes + obj_bytes
-    print(f"message size {data_len + 4}")
     return data_to_send
 
 def bytes2json2obj(data):
@@ -27,7 +26,6 @@ def obj2pickle2bytes(obj, verbose=False):
     data_len = len(pickled_obj)
     len_bytes = data_len.to_bytes(4, 'little')
     data_to_send = len_bytes + pickled_obj
-    print(f"message size {data_len + 4}")
     return data_to_send
 
 def bytes2pickle2obj(data):

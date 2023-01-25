@@ -69,7 +69,10 @@ class CentralGradioInterface():
             outputs=[config_chat_history, "state"],
             allow_flagging="never",
         )
-        config_interface.launch()     
+        config_interface.launch()
+
+    def stop(self):
+        pass
     
     def is_blocking(self):
         return True

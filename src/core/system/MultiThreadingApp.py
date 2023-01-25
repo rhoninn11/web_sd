@@ -22,7 +22,7 @@ class MultiThreadingApp():
     def bind_threads(self, thread_list):
         self.thread_list_ref = thread_list
 
-    def blocking():
+    def blocking(self):
         last_thread = self.thread_list_ref[-1]
         if last_thread.is_blocking() == False:
             try:

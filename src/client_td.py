@@ -28,17 +28,18 @@ class ClientWrapper():
         if self.client_thread:
             out_queue = self.client_thread.out_queue
             if out_queue.queue_len() == 0:
-                return {}
+                return None
             
             return out_queue.dequeue_item()
-        return {}
+        return None
 
 class ClientLogicThread(ThreadWrap):
     def __init__(self):
         ThreadWrap.__init__(self)
         self.client_wrapper = None
         self.on_finish = None
-        self.frame_skip_num = 5
+
+        self.memory = 0
         
 
     def bind_wrapper(self, wrapper):
@@ -48,15 +49,15 @@ class ClientLogicThread(ThreadWrap):
         self.on_finish = callback
 
     def skip_frames(self, frame_skip_num):
-        for i in range(frame_skip_num):
+        for _ in range(frame_skip_num):
             self.in_queue.dequeue_item()
 
     def get_td_image(self):
         inlen = self.in_queue.queue_len()
         outlen = self.out_queue.queue_len()
         # print(F"+++ inlen: {inlen}, outlen: {outlen}")
-        if inlen > self.frame_skip_num:
-            self.skip_frames(self.frame_skip_num)
+        if inlen:
+            self.skip_frames(inlen-1)
             numpy_img = self.in_queue.dequeue_item()
             pil_img = numpy2pil(numpy_img)
             return pil_img
@@ -82,27 +83,41 @@ class ClientLogicThread(ThreadWrap):
         simple_data_img = result["img2img"]["img"]
         pil_img = simple_data2pil(simple_data_img)
         self.set_td_img(pil_img)
+
+
+    def passthrough_loop(self):
+        while self.run_cond:            
+            command = self.prepare_command()
+            if command:
+                self.process_result(command)
+            
+        return
     
     def loop(self):
+        wait_result = False
         while self.run_cond:
             if self.client_wrapper == None:
+                print("!!! client wrapper is missing")
                 return
             
-            command = self.prepare_command()
-            if command == None:
-                continue
-            
-            self.process_result(command)
-            continue
-
-            self.client_wrapper.send_to_server(command)
+            progress = 0
+            if not wait_result:
+                command = self.prepare_command()
+                if command:
+                    self.client_wrapper.send_to_server(command)
+                    wait_result = True
+                    progress += 1
             
             result = self.client_wrapper.get_server_info()
-            while not result:
-                print("refresh")
-                time.sleep(0.1)
+            if result:
                 result = self.client_wrapper.get_server_info()
-            
+                wait_result = False
+                progress += 1
+
+            if not progress:
+                time.sleep(0.05)
+
+        return
 
     def run(self):
         self.loop()
