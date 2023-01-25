@@ -19,7 +19,9 @@ class DiffusionClientThread(ConnectionThread):
         print(self.host)
         try:
             tcp_socket = socket.create_connection(('localhost', self.port))
+            print("+++ join server")
             self.connection_loop(tcp_socket, self.in_queue, self.out_queue)
+            print("+++ leave server")
         except Exception as e:
             print(f"error?, {e}")
             pass

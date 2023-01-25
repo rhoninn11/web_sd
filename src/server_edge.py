@@ -33,6 +33,7 @@ class EdgeServer(MultiThreadingApp):
         tcp_thread = DiffusionServerThread()
 
         tcp_thread.bind_worker(stableD_thread)
+        tcp_thread.config_host("localhost", 6203)
 
         # gradio thread block main thread - must be last on the list
         threads = [stableD_thread, tcp_thread]

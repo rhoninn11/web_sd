@@ -111,8 +111,8 @@ class CentralLogicThread(ThreadWrap):
             break
 
         if self.in_queue.queue_len():
+            print("+++ new frame")
             sd_config = self.config["sd_config"]
-            print(f"+++ sd config {sd_config}")
             command = self.in_queue.dequeue_item()
             command["img2img"]["config"] = sd_config
             wrapper.send_to_server(command)

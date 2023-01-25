@@ -25,7 +25,6 @@ class SDiffusionThread(ThreadWrap):
             self.config = new_config
 
     def process_request(self, request, pipeline = None):
-        print(request)
         if "img2img" in request:
             img2img(pipeline, request["img2img"], self.out_queue)
         return
