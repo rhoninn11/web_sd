@@ -1,6 +1,7 @@
 
 import socket, time
 from core.utils.utils_thread import ConnectionThread
+from core.utils.utils_except import traceback_info
 from core.globals import get_server_port
 
 class DiffusionClientThread(ConnectionThread):
@@ -23,8 +24,7 @@ class DiffusionClientThread(ConnectionThread):
             self.connection_loop(tcp_socket, self.in_queue, self.out_queue)
             print("+++ leave server")
         except Exception as e:
-            print(f"error?, {e}")
-            pass
+            traceback_info(e)
 
         if tcp_socket:
             tcp_socket.close()

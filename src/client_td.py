@@ -104,13 +104,17 @@ class ClientLogicThread(ThreadWrap):
             if not wait_result:
                 command = self.prepare_command()
                 if command:
+                    print("+++ send start")
                     self.client_wrapper.send_to_server(command)
+                    print("+++ send ended")
                     wait_result = True
                     progress += 1
             
             result = self.client_wrapper.get_server_info()
             if result:
-                result = self.client_wrapper.get_server_info()
+                print("+++ before process")
+                self.process_result(result)
+                print("+++ after process")
                 wait_result = False
                 progress += 1
 

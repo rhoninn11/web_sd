@@ -45,8 +45,9 @@ class ConnectionThread(ThreadWrap):
 
         data = in_queue.dequeue_item()
         msg_bytes = obj2json2bytes(data)
-        print(f"+++ wysyłanie {len(msg_bytes)}b")
-        connection.sendall(msg_bytes, socket.MSG_WAITALL)
+        print(f"+++ {len(msg_bytes)}b")
+        connection.sendall(msg_bytes)
+        print(f"+++ wysłano")
         return 1
 
     def revice_data(self, connection):
