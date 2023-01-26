@@ -69,7 +69,7 @@ class CentralGradioInterface():
             outputs=[config_chat_history, "state"],
             allow_flagging="never",
         )
-        config_interface.launch(share=True)
+        config_interface.launch()
 
     def stop(self):
         pass

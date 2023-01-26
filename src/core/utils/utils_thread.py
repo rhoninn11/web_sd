@@ -38,62 +38,71 @@ class ThreadWrap(threading.Thread):
 class ConnectionThread(ThreadWrap):
     def __init__(self):
         ThreadWrap.__init__(self)
-
-    def send(self, connection, in_queue):
-        if in_queue.queue_len() == 0:
-            return 0
-
-        data = in_queue.dequeue_item()
-        msg_bytes = obj2json2bytes(data)
+    
+    def send(self, connection, obj_2_send):
+        msg_bytes = obj2json2bytes(obj_2_send)
         print(f"+++ {len(msg_bytes)}b")
         connection.sendall(msg_bytes)
         print(f"+++ wysłano")
-        return 1
 
     def revice_data(self, connection):
         data = connection.recv(4)
-        if not data:
+        if data is None:
             return None
         byte_size = int.from_bytes(data, byteorder="little")
 
         data = b''
         while len(data) < byte_size:
             packet = connection.recv(byte_size - len(data))
-            if not packet:
+            if packet is None:
                 return None
             data += packet
 
         return data
 
-    def recive(self, connection, out_queue):
+    def recive(self, connection):
         msg_bytes = self.revice_data(connection)
         print(f"+++ odebrano {len(msg_bytes)}b")
-        new_data = bytes2json2obj(msg_bytes)
-        if new_data is None:
-            return -1000
-        
-        out_queue.queue_item(new_data)
-        return 1
+        if msg_bytes is None:
+            return None
 
-    def recive_nb(self, connection, out_queue):
-        progres = 0
-        connection.settimeout(0.1)
+        new_data = bytes2json2obj(msg_bytes)
+        return new_data
+
+    def recive_nb(self, connection):
         try:
-            progres = self.recive(connection, out_queue)
+            connection.settimeout(0.1)
+            return self.recive(connection)
         except: 
             pass
-        return progres
+        return None
+
+    def progress_balance(self, progress):
+        if progress == 0:
+            time.sleep(0.1)
+
 
     def connection_loop(self, connection, conn_in_q, conn_out_q):
-        while self.run_cond:
-            # print("+++ connection loop")
-            # print(f"{conn_in_q}")
-            # print(f"{conn_out_q}")
-
+        
+        conn_end = False
+        while self.run_cond and not conn_end:
+            
             progress = 0
-            progress += self.send(connection, conn_in_q)
-            progress += self.recive_nb(connection, conn_out_q)
-            if progress == 0:
-                time.sleep(0.1)
-            if progress < 0:
-                break
+            if conn_in_q.queue_len():
+                obj_2_send = conn_in_q.dequeue_item()
+                self.send(connection, obj_2_send)
+                progress += 1
+            
+            rcv_obj = self.recive_nb(connection)
+            if rcv_obj:
+                conn_end = "disconnect" in rcv_obj    
+                if not conn_end:
+                    conn_out_q.queue_item(rcv_obj)
+                progress += 1
+
+            self.progress_balance(progress)
+        
+        if not conn_end:
+            print(f"+++ disconnect inform other side")
+            conn_end_obj = {"disconnect":1}
+            self.send(connection, conn_end_obj)
