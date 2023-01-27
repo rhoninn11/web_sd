@@ -151,7 +151,7 @@ class CentralServerApp(MultiThreadingApp):
         print("+++ app start")
         logic_thread = CentralLogicThread()
         server_thread = DiffusionServerThread()
-        server_thread.config_host('localhost', 6111)
+        server_thread.config_host('192.168.2.113', 6500)
         gradio_thread = CentralGradioInterface() 
 
         server_thread.bind_worker(logic_thread)
