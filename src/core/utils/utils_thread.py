@@ -38,6 +38,8 @@ class ThreadWrap(threading.Thread):
 class ConnectionThread(ThreadWrap):
     def __init__(self):
         ThreadWrap.__init__(self)
+        self.connect_ack = False
+        self.disconnect_ack = False
     
     def send(self, connection, obj_2_send):
         msg_bytes = obj2json2bytes(obj_2_send)
@@ -48,6 +50,7 @@ class ConnectionThread(ThreadWrap):
     def revice_data(self, connection):
         data = connection.recv(4)
         if data is None:
+            print("+++ recive None 1")
             return None
         byte_size = int.from_bytes(data, byteorder="little")
 
@@ -55,6 +58,7 @@ class ConnectionThread(ThreadWrap):
         while len(data) < byte_size:
             packet = connection.recv(byte_size - len(data))
             if packet is None:
+                print("+++ recive None 2")
                 return None
             data += packet
 
@@ -81,11 +85,33 @@ class ConnectionThread(ThreadWrap):
         if progress == 0:
             time.sleep(0.1)
 
+    def process_information(self, conn, information_obj, out_pipe):
+        is_disconnect = "disconnect" in information_obj    
+        if is_disconnect and not self.disconnect_ack:
+            print(f"+++ diconnect obj recived")
+            self.disconnect_ack = True
 
+        is_connect = "connect" in information_obj    
+        if is_connect and not self.connect_ack:
+            print(f"+++ connect obj recived")
+            self.connect_ack = True
+
+        operate_normal = not is_connect and not is_disconnect   
+        if operate_normal:
+            out_pipe.queue_item(information_obj)
+            
+
+    def send_simple_obj(self, connection, key):
+        print(f"+++ {key} obj sended")
+        simple_obj = { key:1}
+        self.send(connection, simple_obj)
+ 
     def connection_loop(self, connection, conn_in_q, conn_out_q):
         
-        conn_end = False
-        while self.run_cond and not conn_end:
+        self.connect_ack = False
+        self.disconnect_ack = False
+        self.send_simple_obj(connection, "connect")
+        while self.run_cond and not self.disconnect_ack:
             
             progress = 0
             if conn_in_q.queue_len():
@@ -93,16 +119,13 @@ class ConnectionThread(ThreadWrap):
                 self.send(connection, obj_2_send)
                 progress += 1
             
-            rcv_obj = self.recive_nb(connection)
-            if rcv_obj:
-                conn_end = "disconnect" in rcv_obj    
-                if not conn_end:
-                    conn_out_q.queue_item(rcv_obj)
+            recived_obj = self.recive_nb(connection)
+            if recived_obj:
+                self.process_information(connection, recived_obj, conn_out_q)
                 progress += 1
 
             self.progress_balance(progress)
         
-        if not conn_end:
-            print(f"+++ disconnect inform other side")
-            conn_end_obj = {"disconnect":1}
-            self.send(connection, conn_end_obj)
+        if self.connect_ack and not self.disconnect_ack:
+            self.send_simple_obj(connection, "disconnect")
+            self.disconnect_ack = True
