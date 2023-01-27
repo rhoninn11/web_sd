@@ -17,9 +17,9 @@ class DiffusionClientThread(ConnectionThread):
     def client_connect(self):
         tcp_socket = None
 
-        print(self.host)
+        print(f"+++ client connecting to: {self.host}:{self.port}")
         try:
-            tcp_socket = socket.create_connection(('localhost', self.port))
+            tcp_socket = socket.create_connection((self.host, self.port))
             print("+++ join server")
             self.connection_loop(tcp_socket, self.in_queue, self.out_queue)
             print("+++ leave server")

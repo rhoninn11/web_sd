@@ -137,7 +137,7 @@ class TouchDesignerClient(MultiThreadingApp):
         addres = params["address"]
         port = params["port"]
         client_thread = DiffusionClientThread()
-        client_thread.config_host_dst('localhost', 6111)
+        client_thread.config_host_dst(addres, port)
         logic_thread = ClientLogicThread()
 
         client_wrapper = ClientWrapper()

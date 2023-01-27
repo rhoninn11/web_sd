@@ -38,12 +38,9 @@ class MultiThreadingApp():
         self.stop_threads()
 
     def ayncio_thread_launch(self, thread_list):
-        print("elo")
-        print("elo1")
         self.bind_threads(thread_list)
         self.start_threads()
 
     def ayncio_thread_stop(self):
-        print("elo2")
         self.stop_threads()
         
