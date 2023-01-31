@@ -5,8 +5,8 @@ from core.utils.utils_except import traceback_info
 from core.globals import get_server_port
 
 class DiffusionClientThread(ConnectionThread):
-    def __init__(self):
-        ConnectionThread.__init__(self)
+    def __init__(self, name):
+        ConnectionThread.__init__(self, name)
         self.host = 'localhost'
         self.port = get_server_port()
 

@@ -1,6 +1,6 @@
 import torch, time
 
-from core.threads.DiffusionServerThread import DiffusionServerThread
+from core.threads.DiffusionServerThread import ServerThread
 from core.threads.SDiffusionThread import SDiffusionThread
 from core.threads.GradioInterface import GradioInterface
 
@@ -30,7 +30,7 @@ class EdgeServer(MultiThreadingApp):
         print(f"+++ model loaded")
 
         stableD_thread = SDiffusionThread(pipeline)
-        tcp_thread = DiffusionServerThread()
+        tcp_thread = ServerThread("edge_server")
 
         tcp_thread.bind_worker(stableD_thread)
         tcp_thread.config_host("localhost", 6203)

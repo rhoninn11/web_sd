@@ -3,9 +3,9 @@ import socket, time, select
 from core.utils.utils_thread import ConnectionThread
 from core.globals import get_server_port
 
-class DiffusionServerThread(ConnectionThread):
-    def __init__(self):
-        ConnectionThread.__init__(self)
+class ServerThread(ConnectionThread):
+    def __init__(self, name):
+        ConnectionThread.__init__(self, name)
         self.worker = None
         self.host = 'localhost'
         self.port = get_server_port()

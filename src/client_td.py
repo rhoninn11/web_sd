@@ -6,7 +6,7 @@ import asyncio
 # from src.core.utils.utils_thread import ConnectionThread
 from core.utils.utils_thread import ThreadWrap
 from core.threads.DiffusionClientThread import DiffusionClientThread
-from core.threads.DiffusionServerThread import DiffusionServerThread
+from core.threads.DiffusionServerThread import ServerThread
 from core.utils.utils import pil2simple_data, simple_data2pil, pil2numpy, numpy2pil
 
 from core.system.MultiThreadingApp import MultiThreadingApp

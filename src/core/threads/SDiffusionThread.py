@@ -26,7 +26,7 @@ class SDiffusionThread(ThreadWrap):
 
     def process_request(self, request, pipeline = None):
         if "img2img" in request:
-            img2img(pipeline, request["img2img"], self.out_queue)
+            img2img(pipeline, request, self.out_queue)
         return
 
     def run(self):
