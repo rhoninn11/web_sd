@@ -77,10 +77,8 @@ class ConnectionThreadBase(ThreadWrap):
         return new_data
 
     def recive_nb(self, connection):
-        poll = select.poll()
-        poll.register(connection, select.POLLIN)
-        events = poll.poll(0)
-        if events:
+        ready, _, _ = select.select([connection], [], [], 0)
+        if ready:
             return self.recive(connection)
 
         return None

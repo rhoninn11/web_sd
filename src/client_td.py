@@ -34,8 +34,8 @@ class ClientWrapper():
         return None
 
 class ClientLogicThread(ThreadWrap):
-    def __init__(self):
-        ThreadWrap.__init__(self)
+    def __init__(self, name="noname"):
+        ThreadWrap.__init__(self, name)
         self.client_wrapper = None
         self.on_finish = None
 
@@ -94,28 +94,22 @@ class ClientLogicThread(ThreadWrap):
         return
     
     def loop(self):
-        wait_result = False
         while self.run_cond:
             if self.client_wrapper == None:
                 print("!!! client wrapper is missing")
                 return
             
             progress = 0
-            if not wait_result:
-                command = self.prepare_command()
-                if command:
-                    print("+++ send start")
-                    self.client_wrapper.send_to_server(command)
-                    print("+++ send ended")
-                    wait_result = True
-                    progress += 1
+            command = self.prepare_command()
+            if command:
+                self.client_wrapper.send_to_server(command)
+                print("+++ frame sended")
+                progress += 1
             
             result = self.client_wrapper.get_server_info()
             if result:
-                print("+++ before process")
                 self.process_result(result)
-                print("+++ after process")
-                wait_result = False
+                print("+++ new frame")
                 progress += 1
 
             if not progress:
@@ -136,9 +130,9 @@ class TouchDesignerClient(MultiThreadingApp):
 
         addres = params["address"]
         port = params["port"]
-        client_thread = DiffusionClientThread()
+        client_thread = DiffusionClientThread(name="client")
         client_thread.config_host_dst(addres, port)
-        logic_thread = ClientLogicThread()
+        logic_thread = ClientLogicThread(name="logic")
 
         client_wrapper = ClientWrapper()
         client_wrapper.bind_client_thread(client_thread)

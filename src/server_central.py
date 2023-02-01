@@ -169,8 +169,6 @@ class CentralLogicThread(ThreadWrap):
         edge_result = wrapper.get_edge_result()
         if edge_result:
             self.out_queue.queue_item(edge_result)
-            for key in edge_result:
-                print(f"+++ {key} {sys.getsizeof(edge_result[key])}") 
             progress += 1
 
         return progress
