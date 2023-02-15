@@ -155,9 +155,9 @@ class CentralLogicThread(ThreadWrap):
 
         new_frame_num = self.in_queue.queue_len()
         if new_frame_num:
+            for _ in range(new_frame_num-1):
+                request2drop = self.in_queue.dequeue_item()
             if not wrapper.is_edge_processing():
-                for _ in range(new_frame_num-1):
-                    request2drop = self.in_queue.dequeue_item()
 
                 edge_request = self.in_queue.dequeue_item()
                 print("+++ new frame")

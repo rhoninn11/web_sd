@@ -3,11 +3,11 @@ import time
 
 from core.utils.utils_thread import ThreadWrap, pipe_queue
 from core.scripts.img2Img import img2img
+from core.scripts.inpt_img2Img import inpt_img2img
 
 class SDiffusionThread(ThreadWrap):
-    def __init__(self, pipeline):
+    def __init__(self):
         ThreadWrap.__init__(self)
-        self.pipeline = pipeline
         self.config_pipe = pipe_queue("config")
         # config będzie przychodził wraz z
         self.config = {
@@ -24,9 +24,11 @@ class SDiffusionThread(ThreadWrap):
             new_config = self.config_pipe.dequeue_item()
             self.config = new_config
 
-    def process_request(self, request, pipeline = None):
+    def process_request(self, request):
         if "img2img" in request:
-            img2img(pipeline, request, self.out_queue)
+            img2img(request, self.out_queue)
+        if "inpt_img2img" in request:
+            inpt_img2img(request, self.out_queue)
         return
 
     def run(self):
@@ -38,4 +40,4 @@ class SDiffusionThread(ThreadWrap):
                 continue
             
             new_request = in_queue.dequeue_item()
-            self.process_request(new_request, self.pipeline)
+            self.process_request(new_request)
