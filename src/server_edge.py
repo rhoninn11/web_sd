@@ -1,4 +1,4 @@
-import torch, time
+import time
 
 from core.threads.DiffusionServerThread import ServerThread
 from core.threads.SDiffusionThread import SDiffusionThread
@@ -6,30 +6,14 @@ from core.threads.GradioInterface import GradioInterface
 
 from core.system.MultiThreadingApp import MultiThreadingApp
  
-from diffusers import (
-    StableDiffusionImg2ImgPipeline,
-    DDIMScheduler
-)
-
-# model_id = "stabilityai/stable-diffusion-2-base"
-def init_pipeline(model_id):
-    # Use the Euler scheduler here instead
-    scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
-    pipe_img2img = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
-    pipe_img2img = pipe_img2img.to("cuda")
-    return pipe_img2img
-
 class EdgeServer(MultiThreadingApp):
     def __init__(self):
         MultiThreadingApp.__init__(self)
     
     def run(self):
         print(f"+++ app start")
-        model_id = "stabilityai/stable-diffusion-2-base"
-        pipeline = init_pipeline(model_id)
-        print(f"+++ model loaded")
 
-        stableD_thread = SDiffusionThread(pipeline)
+        stableD_thread = SDiffusionThread()
         tcp_thread = ServerThread("edge_server")
 
         tcp_thread.bind_worker(stableD_thread)
@@ -39,7 +23,7 @@ class EdgeServer(MultiThreadingApp):
         threads = [stableD_thread, tcp_thread]
         self.thread_launch(threads)
 
-        print("+++ server exit")
+        print("+++ app exit")
 
 
 def main():

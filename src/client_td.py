@@ -74,14 +74,14 @@ class ClientLogicThread(ThreadWrap):
         if init_img == None:
             return None
 
-        command = { "img2img": {
+        command = { "inpt_img2img": {
                 "img": pil2simple_data(init_img)  
             }}
 
         return command
 
     def process_result(self, result):
-        simple_data_img = result["img2img"]["img"]
+        simple_data_img = result["inpt_img2img"]["img"]
         pil_img = simple_data2pil(simple_data_img)
         self.set_td_img(pil_img)
 
