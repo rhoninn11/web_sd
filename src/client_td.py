@@ -22,7 +22,8 @@ class ClientWrapper():
     def send_to_server(self, command):
         if self.client_thread:
             in_queue = self.client_thread.in_queue
-            in_queue.queue_item(command)
+            if in_queue.queue_len() < 2:
+                in_queue.queue_item(command)
     
     def get_server_info(self):
         if self.client_thread:
