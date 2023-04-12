@@ -5,7 +5,6 @@ from PIL import Image
 # from src.core.utils.utils_thread import ConnectionThread
 from core.utils.utils_thread import ThreadWrap
 from core.threads.DiffusionClientThread import DiffusionClientThread
-from core.threads.DiffusionServerThread import ServerThread
 from core.utils.utils import pil2simple_data, simple_data2pil
 
 from core.system.MultiThreadingApp import MultiThreadingApp
@@ -45,13 +44,26 @@ class ClientLogicThread(ThreadWrap):
         self.on_finish = callback
 
     def prepare_command(self):
-        a = numpy.random.rand(30,30,3) * 255
-        init_img = Image.fromarray(a.astype('uint8')).convert('RGB')
+        init_img = Image.open('fs/in/img.png').convert('RGB')
 
         command = { "img2img": {
                 "img": pil2simple_data(init_img)  
             }}
         return command
+    
+    def process_result(self, result):
+        if result:
+            if "progress" in result:
+                print("Progress: ", result["progress"])
+                return False
+
+            if "img2img" in result:
+                simple_data_img = result["img2img"]["img"]
+                pil_img = simple_data2pil(simple_data_img)
+                pil_img.save('fs/out/img.png')
+                return True
+
+        return False
     
     def script(self):
         if self.client_wrapper == None:
@@ -60,15 +72,14 @@ class ClientLogicThread(ThreadWrap):
         command = self.prepare_command()
         self.client_wrapper.send_to_server(command)
         
+        loop_cond = lambda r: not self.process_result(r) and self.run_cond
+
         result = self.client_wrapper.get_server_info()
-        while not result and self.run_cond:
+        while loop_cond(result):
             time.sleep(0.1)
             result = self.client_wrapper.get_server_info()
 
-        if result:
-            simple_data_img = result["img2img"]["img"]
-            pil_img = simple_data2pil(simple_data_img)
-            pil_img.save('outputs/czwartek.png')
+        print("+++ task finished +++")
 
     def run(self):
         self.script()
@@ -80,8 +91,8 @@ class ExampleClient(MultiThreadingApp):
         MultiThreadingApp.__init__(self)
     
     def run(self):
-        client_thread = DiffusionClientThread()
-        client_thread.config_host_dst('localhost', 6111)
+        client_thread = DiffusionClientThread(name="client-central")
+        client_thread.config_host_dst('localhost', 6500)
         logic_thread = ClientLogicThread()
 
         client_wrapper = ClientWrapper()

@@ -8,7 +8,7 @@ from diffusers import (
     DDIMScheduler
 )
 
-def init_img2img_pipeline(model_id):
+def init_img2img_pipeline():
     model_id = "stabilityai/stable-diffusion-2-base"
     scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
     pipe_img2img = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)

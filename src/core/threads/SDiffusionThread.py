@@ -2,6 +2,7 @@
 import time
 
 from core.utils.utils_thread import ThreadWrap, pipe_queue
+from core.scripts.txt2Img import txt2img
 from core.scripts.img2Img import img2img
 from core.scripts.inpt_img2Img import inpt_img2img
 
@@ -25,6 +26,8 @@ class SDiffusionThread(ThreadWrap):
             self.config = new_config
 
     def process_request(self, request):
+        if "txt2img" in request:
+            txt2img(request, self.out_queue)
         if "img2img" in request:
             img2img(request, self.out_queue)
         if "inpt_img2img" in request:

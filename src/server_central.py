@@ -79,7 +79,7 @@ class CentralLogicThread(ThreadWrap):
         ThreadWrap.__init__(self, name)
         self.edge_list = {}
         edge_config = { "edge_host": {} }
-        sd_config = {
+        no_config = {
                 "prompt": "stone marble covered with floral patterns chilling in fantasy realm",
                 "prompt_negative": "",
                 "power": 0.8
@@ -88,8 +88,10 @@ class CentralLogicThread(ThreadWrap):
         self.config_pipe = pipe_queue("config")
         self.config = { 
             "edge_config": edge_config,
-            "sd_config": sd_config
+            "no_config": no_config
         }
+        # istnieje potencjał na stworzenie klasy edge manager
+        # istnieje potencjał na stworzenie klasy flow manager
         
     def new_config(self, new_config):
         self.config_pipe.queue_item(new_config)
@@ -104,77 +106,117 @@ class CentralLogicThread(ThreadWrap):
             return 1
 
         return 0
+    
+    def spawn_edge(self, key, host, port):
+        new_client_thread = DiffusionClientThread(name=f"conn-{key}")
+        new_client_thread.config_host_dst(host, port)
+        new_client_thread.start()
 
-    def manage_edge(self, edge_config):
-        # porównać z obecnym konfigiem
-        # to co zniknęło zatrzymać
-        # to co się pojawiło zatrzymać
-        hosts_to_add = {}
-        hosts_to_remove = {}
+        new_client_wrapper = EdgeWrapper()
+        new_client_wrapper.bind_client_thread(new_client_thread)
 
-        # sprawdzić czy coś nowego się pojawiło, zanotować
-        for key in edge_config:
-            if not key in self.edge_list:
-                hosts_to_add[key] = edge_config[key]
-
-        # sprawdzić czy coś starego zniknęło, zanotować
-        for key in self.edge_list:
-            if not key in edge_config:
-                hosts_to_remove[key] = self.edge_list[key]
-
-
-
-        for key in hosts_to_add:
-            host, port = hosts_to_add[key]
-            new_client_thread = DiffusionClientThread(name=f"conn-{key}")
-            new_client_thread.config_host_dst(host, port)
-            new_client_thread.start()
-
-            new_client_wrapper = EdgeWrapper()
-            new_client_wrapper.bind_client_thread(new_client_thread)
-
-            self.edge_list[key] = { 
-                "wrapper": new_client_wrapper,
-                "thread": new_client_thread,
-                "stats": EdgeStats()
-            }
-            print(f"+++ spawned new client {key}")
-
+        edge_instance = { 
+            "wrapper": new_client_wrapper,
+            "thread": new_client_thread,
+            "stats": EdgeStats()
+        }
+        return edge_instance
     
 
-    def manage_flow(self):
-        if len(self.edge_list) == 0:
-            return 0
-        
+    def edges_to_add(self, edge_config):
+        edges_to_add = {}
+
+        # looking for new edges
+        for key in edge_config:
+            if not key in self.edge_list:
+                edges_to_add[key] = edge_config[key]
+
+        return edges_to_add
+
+    def edges_to_remove(self, edge_config):
+        edges_to_remove = {}
+
+        # looking for edges to remove
+        for key in self.edge_list:
+            if not key in edge_config:
+                edges_to_remove[key] = self.edge_list[key]
+
+        return edges_to_remove
+    
+    def add_edges(self, edges_to_add):
+        for key in edges_to_add:
+            host, port = edges_to_add[key]
+            new_edge = self.spawn_edge(key, host, port)
+
+            self.edge_list[key] = new_edge
+            print(f"+++ spawned edge spawned {key}")
+
+    def try_return_edge_result(self):
         progress = 0
-        
-        wrapper = None
         for key in self.edge_list:
             edge = self.edge_list[key]
             wrapper = edge["wrapper"]
 
+            edge_result = wrapper.get_edge_result()
+            if edge_result:
+                self.out_queue.queue_item(edge_result)
+                progress += 1
+        return 0
+    
+    def select_edge(self):
+        if len(self.edge_list) == 0:
+            return None
+        
+        for key in self.edge_list:
+            edge = self.edge_list[key]
+            wrapper = edge["wrapper"]
+            if not wrapper.is_edge_processing():
+                return wrapper
+
+        return None
+    
+    def select_request(self, drop=False):
         new_frame_num = self.in_queue.queue_len()
         if new_frame_num:
-            for _ in range(new_frame_num-1):
-                request2drop = self.in_queue.dequeue_item()
-            if not wrapper.is_edge_processing():
+            if drop:
+                for _ in range(new_frame_num-1):
+                    request2drop = self.in_queue.dequeue_item()
 
-                edge_request = self.in_queue.dequeue_item()
-                print("+++ new frame")
-                sd_config = self.config["sd_config"]
-                edge_request["img2img"]["config"] = sd_config
-                wrapper.send_to_edge(edge_request)
+            return self.in_queue.dequeue_item()
+        
+        return None
+    
+    def manage_edge(self, edge_config):
+        hosts_to_add = self.edges_to_add(edge_config)
+        hosts_to_remove = self.edges_to_remove(edge_config)
+
+        self.add_edges(hosts_to_add)
+        self.remove_edges(hosts_to_remove)
+
+    def manage_flow(self):
+        progress = 0
+        wrapper = self.select_edge()
+        if wrapper:
+            request = self.select_request()
+            if request:
+                if "config" not in request["img2img"]:
+                    request["img2img"]["config"] = self.config["no_config"]
+                wrapper.send_to_edge(request)
                 progress += 1
 
-        edge_result = wrapper.get_edge_result()
-        if edge_result:
-            self.out_queue.queue_item(edge_result)
-            progress += 1
-
+        progress += self.try_return_edge_result()
         return progress
-
-        
     
+    def remove_edges(self, edges_to_remove):
+        key_list = list(edges_to_remove.keys())
+        for key in key_list:
+            edge_obj = self.edge_list[key]
+            thread = edge_obj["thread"]
+            thread.stop()
+
+        for key in key_list:
+            del self.edge_list[key]
+
     def loop(self):
         # logika jest workerem serwera
         # logika powinna być konfigurowana za pomocą gradio
@@ -188,10 +230,7 @@ class CentralLogicThread(ThreadWrap):
             if not progress:
                 time.sleep(0.1)
 
-        for key in self.edge_list:
-            edge_obj = self.edge_list[key]
-            thread = edge_obj["thread"]
-            thread.stop()
+        self.remove_edges(self.edge_list)
 
     def run(self):
         self.loop()
@@ -205,7 +244,7 @@ class CentralServerApp(MultiThreadingApp):
         print("+++ app start")
         logic_thread = CentralLogicThread(name="client-logic")
         server_thread = ServerThread(name="central-server")
-        server_thread.config_host('192.168.2.113', 6500)
+        server_thread.config_host('localhost', 6500)
         gradio_thread = CentralGradioInterface() 
 
         server_thread.bind_worker(logic_thread)

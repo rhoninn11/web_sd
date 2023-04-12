@@ -2,7 +2,6 @@ import time
 
 from core.threads.DiffusionServerThread import ServerThread
 from core.threads.SDiffusionThread import SDiffusionThread
-from core.threads.GradioInterface import GradioInterface
 
 from core.system.MultiThreadingApp import MultiThreadingApp
  

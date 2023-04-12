@@ -24,7 +24,7 @@ class CentralGradioInterface():
         return "".join(message)
     
     def prompt_config_chat(self, prompt, prompt_negative, power, host_string, history):
-        new_sd_config = {
+        new_no_config = {
             "prompt": prompt,
             "prompt_negative": prompt_negative,
             "power": power
@@ -33,11 +33,11 @@ class CentralGradioInterface():
         new_edge_config = host_string_to_dict(host_string)
         new_config = { 
             "edge_config": new_edge_config,
-            "sd_config": new_sd_config
+            "no_config": new_no_config
         }
         
         history = self.history
-        message = self.config_messegify(new_sd_config)
+        message = self.config_messegify(new_no_config)
         message += f"HOST_STRING: {host_string}"
         if self.config_reciver:
             self.config_reciver.new_config(new_config)
