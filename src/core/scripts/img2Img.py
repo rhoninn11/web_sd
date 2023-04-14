@@ -8,14 +8,23 @@ from diffusers import (
     DDIMScheduler
 )
 
+# ale będzie trzeba rozwarzyć co zrobić jak są DWA
+DEVICE = "cuda"
+NAME = "img2img"
+
 def init_img2img_pipeline():
     model_id = "stabilityai/stable-diffusion-2-base"
     scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
     pipe_img2img = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
-    pipe_img2img = pipe_img2img.to("cuda")
+    pipe_img2img = pipe_img2img.to(DEVICE)
     return pipe_img2img
 
 pipeline = []
+
+def init_generator(seed):
+    g_cuda = torch.Generator(device=DEVICE)
+    g_cuda.manual_seed(seed)
+    return g_cuda
 
 def img2img(request_data, out_queue):
     
@@ -24,21 +33,22 @@ def img2img(request_data, out_queue):
         pipeline.append(init_img2img_pipeline())
     
     tic = time.perf_counter()
-    img2img_data = request_data["img2img"]
-    init_img = simple_data2pil(img2img_data["img"])
-    config_data = img2img_data["config"]
+    config = request_data[NAME]["config"]
 
-    prompt = config_data["prompt"]
-    neg_prompt = config_data["prompt_negative"]
-    power = config_data["power"]
+    pipe_parameters = { 
+        "image": simple_data2pil(request_data[NAME]["img"]),
+        "prompt": config["prompt"],
+        "strength": config["power"],
+        "negative_prompt": config["prompt_negative"],
+        "generator": init_generator(42),
+        }
 
     script_pipeline = pipeline[0]
-    pipe_result = script_pipeline(prompt, init_img, 
-        strength=power, negative_prompt=neg_prompt)
+    pipe_result = script_pipeline(**pipe_parameters)
     
     out_img = pipe_result.images[0]
 
-    request_data["img2img"] = { "img": pil2simple_data(out_img) }
+    request_data[NAME] = { "img": pil2simple_data(out_img) }
     toc = time.perf_counter()
     processing_time = toc - tic
     # later add to timing

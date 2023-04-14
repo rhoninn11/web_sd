@@ -6,6 +6,8 @@ from core.threads.DiffusionClientThread import DiffusionClientThread
 from core.threads.GradioCentralInterface import CentralGradioInterface
 from core.utils.utils import pil2simple_data
 
+from core.scripts.index import get_index_script_names
+
 
 class EdgeStats():
     def __init__(self):
@@ -193,16 +195,26 @@ class CentralLogicThread(ThreadWrap):
         self.add_edges(hosts_to_add)
         self.remove_edges(hosts_to_remove)
 
+    def fn_name(self, request):
+        fns = get_index_script_names()
+        for name in fns:
+            if name in request:
+                return name
+        
+        return None
+
     def manage_flow(self):
         progress = 0
         wrapper = self.select_edge()
         if wrapper:
             request = self.select_request()
             if request:
-                if "config" not in request["img2img"]:
-                    request["img2img"]["config"] = self.config["no_config"]
-                wrapper.send_to_edge(request)
-                progress += 1
+                fn_name = self.fn_name(request)
+                if fn_name:
+                    if "config" not in request[fn_name]:
+                        request[fn_name]["config"] = self.config["no_config"]
+                    wrapper.send_to_edge(request)
+                    progress += 1
 
         progress += self.try_return_edge_result()
         return progress

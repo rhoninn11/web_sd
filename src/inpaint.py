@@ -36,7 +36,7 @@ class ClientLogicThread(ThreadWrap):
         ThreadWrap.__init__(self)
         self.client_wrapper = None
         self.on_finish = None
-        self.name = "img2img"
+        self.name = "inpaint"
 
     def bind_wrapper(self, wrapper):
         self.client_wrapper = wrapper
@@ -61,7 +61,7 @@ class ClientLogicThread(ThreadWrap):
             if self.name in result:
                 simple_data_img = result[self.name]["img"]
                 pil_img = simple_data2pil(simple_data_img)
-                pil_img.save('fs/out/{self.name}.png')
+                pil_img.save(f"fs/out/{self.name}.png")
                 return True
 
         return False
@@ -75,10 +75,10 @@ class ClientLogicThread(ThreadWrap):
         
         loop_cond = lambda r: not self.process_result(r) and self.run_cond
 
-        result = self.client_wrapper.get_server_info()
+        result = None
         while loop_cond(result):
-            time.sleep(0.1)
             result = self.client_wrapper.get_server_info()
+            time.sleep(0.1)
 
         print("+++ task finished +++")
 
