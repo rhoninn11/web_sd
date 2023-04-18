@@ -48,7 +48,7 @@ class ConnectionThreadBase(ThreadWrap):
     def send(self, connection, obj_2_send):
         msg_bytes = obj2json2bytes(obj_2_send)
         connection.sendall(msg_bytes)
-        self.print(f"+++ wysłano {len(msg_bytes)}b")
+        # self.print(f"+++ wysłano {len(msg_bytes)}b")
 
     def revice_data(self, connection):
         data = connection.recv(4)
@@ -69,7 +69,7 @@ class ConnectionThreadBase(ThreadWrap):
 
     def recive(self, connection):
         msg_bytes = self.revice_data(connection)
-        self.print(f"+++ odebrano {len(msg_bytes)}b")
+        # self.print(f"+++ odebrano {len(msg_bytes)}b")
         if msg_bytes is None:
             return None
 

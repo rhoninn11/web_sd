@@ -1,20 +1,19 @@
 
 import time
 
-from core.utils.utils_thread import ThreadWrap, pipe_queue
-from core.scripts.index import get_index_scripts
-
-scripts = get_index_scripts()
+from core.utils.utils_thread import ThreadWrap
+from uniq.scripts.ScriptIndex import ScriptIndex
 
 class SDiffusionThread(ThreadWrap):
     def __init__(self):
         ThreadWrap.__init__(self)
+        self.script_index = ScriptIndex()
 
     def process_request(self, request):
-        for key in scripts:
-            if key in request:
-                script = scripts[key]
-                script(request, self.out_queue)
+        si = self.script_index
+        if si.has_script(request):
+            si.run_script(request, self.out_queue)
+
         return
 
     def run(self):

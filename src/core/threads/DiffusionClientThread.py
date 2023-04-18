@@ -2,13 +2,12 @@
 import socket, time
 from core.utils.utils_thread import ConnectionThread
 from core.utils.utils_except import traceback_info
-from core.globals import get_server_port
 
 class DiffusionClientThread(ConnectionThread):
     def __init__(self, name):
         ConnectionThread.__init__(self, name)
         self.host = 'localhost'
-        self.port = get_server_port()
+        self.port = None
 
     def config_host_dst(self, host, port):
         self.host = host
@@ -16,6 +15,9 @@ class DiffusionClientThread(ConnectionThread):
 
     def client_connect(self):
         tcp_socket = None
+
+        if self.port is None:
+            raise Exception("!!! port not set")
 
         print(f"+++ client connecting to: {self.host}:{self.port}")
         try:

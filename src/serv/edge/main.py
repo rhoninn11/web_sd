@@ -1,7 +1,5 @@
-import time
-
 from core.threads.DiffusionServerThread import ServerThread
-from core.threads.SDiffusionThread import SDiffusionThread
+from uniq.threads.SDiffusionThread import SDiffusionThread
 
 from core.system.MultiThreadingApp import MultiThreadingApp
  
@@ -22,8 +20,7 @@ class EdgeServer(MultiThreadingApp):
         threads = [stableD_thread, tcp_thread]
         self.thread_launch(threads)
 
-        print("+++ app exit")
-
+        print("+++ edge server exit")
 
 def main():
     edge_server = EdgeServer()

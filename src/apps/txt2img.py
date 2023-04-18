@@ -45,7 +45,12 @@ class ClientLogicThread(ThreadWrap):
         self.on_finish = callback
 
     def prepare_command(self):
-        command = { self.name: { } }
+        command = { self.name: { 
+            "config": {
+                "prompt": "Hello World",
+                "prompt_negative": "sunny day",
+            } 
+        } }
         return command
     
     def process_result(self, result):
@@ -69,12 +74,13 @@ class ClientLogicThread(ThreadWrap):
         command = self.prepare_command()
         self.client_wrapper.send_to_server(command)
         
+        # TODO: to jest trochę krzywe, ale działa, na potrzeby testowego clienta nie ma się co ty m przejmować
         loop_cond = lambda r: not self.process_result(r) and self.run_cond
-
         result = None
+        
         while loop_cond(result):
             result = self.client_wrapper.get_server_info()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         print("+++ task finished +++")
 

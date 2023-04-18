@@ -1,14 +1,13 @@
 
 import socket, time, select
 from core.utils.utils_thread import ConnectionThread
-from core.globals import get_server_port
 
 class ServerThread(ConnectionThread):
     def __init__(self, name):
         ConnectionThread.__init__(self, name)
         self.worker = None
         self.host = 'localhost'
-        self.port = get_server_port()
+        self.port = None
 
     def bind_worker(self, worker):
         self.worker = worker
@@ -19,6 +18,9 @@ class ServerThread(ConnectionThread):
 
     def run(self):
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        if self.port is None:
+            raise Exception("!!! port not set")
         
         server_address = (self.host, self.port)
         tcp_socket.bind(server_address)
@@ -31,9 +33,9 @@ class ServerThread(ConnectionThread):
             for s in readable:
                 connection, client = s.accept()
                 try:
-                    print("+++ new client")
+                    print(f"+++ new client ({self.name})")
                     self.connection_loop(connection, self.worker.out_queue, self.worker.in_queue)
-                    print("+++ client left")
+                    print(f"+++ client left ({self.name})")
                 finally:
                     connection.close()
 

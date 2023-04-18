@@ -1,6 +1,6 @@
 import time
 import numpy
-from PIL import Image
+from PIL import Image, ImageDraw
 
 # from src.core.utils.utils_thread import ConnectionThread
 from core.utils.utils_thread import ThreadWrap
@@ -8,6 +8,22 @@ from core.threads.DiffusionClientThread import DiffusionClientThread
 from core.utils.utils import pil2simple_data, simple_data2pil
 
 from core.system.MultiThreadingApp import MultiThreadingApp
+
+def mask_image(img):
+    width, height = img.size
+    
+    mask_image = Image.new('RGB', (width, height), color='black')
+    mask_draw_proxy = ImageDraw.Draw(mask_image)
+
+    size = int(width/2)
+    x0 = int(width/2) - size
+    x1 = int(width/2) + size
+    y0 = int(height/2) - size
+    y1 = int(height/2) + size
+    c_shape = (x0, y0, x1, y1)
+    mask_draw_proxy.ellipse(c_shape, fill='white')
+
+    return mask_image
 
 class ClientWrapper():
     def __init__(self, **kwargs):
@@ -46,9 +62,11 @@ class ClientLogicThread(ThreadWrap):
 
     def prepare_command(self):
         init_img = Image.open('fs/in/img.png').convert('RGB')
+        mask_of_img = mask_image(init_img)
 
         command = { self.name: {
-                "img": pil2simple_data(init_img)  
+                "img": pil2simple_data(init_img),
+                "img_mask": pil2simple_data(mask_of_img),
             }}
         return command
     
@@ -73,12 +91,13 @@ class ClientLogicThread(ThreadWrap):
         command = self.prepare_command()
         self.client_wrapper.send_to_server(command)
         
+        # TODO: to jest trochę krzywe, ale działa, na potrzeby testowego clienta nie ma się co ty m przejmować
         loop_cond = lambda r: not self.process_result(r) and self.run_cond
-
         result = None
+
         while loop_cond(result):
             result = self.client_wrapper.get_server_info()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         print("+++ task finished +++")
 

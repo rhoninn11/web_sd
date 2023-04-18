@@ -3,19 +3,19 @@ from core.utils.utils import pil2simple_data
 from core.utils.utils import simple_data2pil
 
 import torch, time
+from PIL import Image, ImageDraw
 from diffusers import (
-    StableDiffusionImg2ImgPipeline,
+    StableDiffusionInpaintPipeline,
     DDIMScheduler
 )
 
-# ale będzie trzeba rozwarzyć co zrobić jak są DWA
 DEVICE = "cuda"
-NAME = "img2img"
+NAME = "inpaint"
 
-def init_img2img_pipeline():
-    model_id = "stabilityai/stable-diffusion-2-base"
+def init_inpt_img2img_pipeline():
+    model_id = "stabilityai/stable-diffusion-2-inpainting"
     scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
-    pipe_img2img = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
+    pipe_img2img = StableDiffusionInpaintPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
     pipe_img2img = pipe_img2img.to(DEVICE)
     return pipe_img2img
 
@@ -26,27 +26,30 @@ def init_generator(seed):
     g_cuda.manual_seed(seed)
     return g_cuda
 
-def img2img(request_data, out_queue):
+def inpaint(request_data, out_queue, step_callback=None):
     
     if len(pipeline) == 0:
-        print(f"+++ img2img initialization")
-        pipeline.append(init_img2img_pipeline())
+        print(f"+++ inpaint initialization")
+        pipeline.append(init_inpt_img2img_pipeline())
     
     tic = time.perf_counter()
+
     config = request_data[NAME]["config"]
+    init_img = simple_data2pil(request_data[NAME]["img"])
+    mask_of_img = simple_data2pil(request_data[NAME]["img_mask"])
 
-    pipe_parameters = { 
-        "image": simple_data2pil(request_data[NAME]["img"]),
+    pipeline_params = {
+        "image": init_img,
         "prompt": config["prompt"],
-        "strength": config["power"],
+        "mask_image": mask_of_img,
+        # "strength": config["power"],
         "negative_prompt": config["prompt_negative"],
-        "generator": init_generator(42),
-        }
+        "callback": step_callback,
+    }
 
-    script_pipeline = pipeline[0]
-    pipe_result = script_pipeline(**pipe_parameters)
-    
+    pipe_result = pipeline[0](**pipeline_params)
     out_img = pipe_result.images[0]
+    
 
     request_data[NAME] = { "img": pil2simple_data(out_img) }
     toc = time.perf_counter()
