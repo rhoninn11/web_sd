@@ -7,9 +7,7 @@ def obj2json2bytes(obj, verbose=False):
     if verbose:
         print(f" +++o2j2d-verb: {json_txt} {data_len}")
     obj_bytes = bytes(json_txt, 'utf-8')
-    len_bytes = data_len.to_bytes(4, 'little')
-    data_to_send = len_bytes + obj_bytes
-    return data_to_send
+    return obj_bytes
 
 def bytes2json2obj(data):
     json_text = data.decode("utf-8")

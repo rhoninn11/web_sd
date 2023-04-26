@@ -13,35 +13,48 @@ class ConnectionThreadBase(ThreadWrap):
         msg_with_name = f"{self.name} {msg}"
         my_print(msg_with_name)
 
+    def wrap_data(self, data_bytes):
+        data_bytes_num = len(data_bytes)
+        data_bytes_num += 2 # packet id to be campatible with ue5
+        id_bytes = bytes("aa", 'utf-8')
+        len_bytes = data_bytes_num.to_bytes(4, 'little')
+        data_to_send = len_bytes + id_bytes + data_bytes
+        return data_to_send
+    
+    def unwrap_data(self, wrapped_bytes):
+        unwrapped_bytes = wrapped_bytes[6:]
+        return unwrapped_bytes
+
     def send(self, connection, obj_2_send):
-        msg_bytes = obj2json2bytes(obj_2_send)
+        data_bytes = obj2json2bytes(obj_2_send)
+        msg_bytes = self.wrap_data(data_bytes)
         connection.sendall(msg_bytes)
         # self.print(f"+++ wysłano {len(msg_bytes)}b")
 
     def revice_data(self, connection):
-        data = connection.recv(4)
-        if data is None:
+        len_bytes = connection.recv(4)
+        if len_bytes is None:
             self.print("+++ recive None 1")
             return None
-        byte_size = int.from_bytes(data, byteorder="little")
+        byte_size = int.from_bytes(len_bytes, byteorder="little")
 
-        data = b''
-        while len(data) < byte_size:
-            packet = connection.recv(byte_size - len(data))
+        rest_bytes = b''
+        while len(rest_bytes) < byte_size:
+            packet = connection.recv(byte_size - len(rest_bytes))
             if packet is None:
                 self.print("+++ recive None 2")
                 return None
-            data += packet
+            rest_bytes += packet
 
-        return data
+        return len_bytes + rest_bytes
 
     def recive(self, connection):
         msg_bytes = self.revice_data(connection)
         # self.print(f"+++ odebrano {len(msg_bytes)}b")
         if msg_bytes is None:
             return None
-
-        new_data = bytes2json2obj(msg_bytes)
+        data_bytes = self.unwrap_data(msg_bytes)
+        new_data = bytes2json2obj(data_bytes)
         return new_data
 
     def recive_nb(self, connection):

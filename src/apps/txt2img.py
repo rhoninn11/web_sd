@@ -45,10 +45,10 @@ class ClientLogicThread(ThreadWrap):
 
     def prepare_command(self):
         command = { self.name: { 
-            "config": {
-                "prompt": "Hello World",
-                "prompt_negative": "sunny day",
-            } 
+            # "config": {
+            #     "prompt": "Hello World",
+            #     "prompt_negative": "sunny day",
+            # } 
         } }
         return command
     
