@@ -1,3 +1,7 @@
+
+import time
+
+from core.utils.utils_thread import pipe_queue
 from core.threads.ConnectionThreadBase import ConnectionThreadBase
 
 class ConnectionThread(ConnectionThreadBase):
@@ -10,7 +14,7 @@ class ConnectionThread(ConnectionThreadBase):
         if progress == 0:
             time.sleep(0.1)
 
-    def process_information(self, information_obj, out_pipe):
+    def process_information(self, information_obj, out_pipe: pipe_queue):
         is_disconnect = "disconnect" in information_obj    
         if is_disconnect and not self.disconnect_ack:
             self.print(f"+++ diconnect obj recived")
@@ -27,7 +31,7 @@ class ConnectionThread(ConnectionThreadBase):
             
 
     def send_simple_obj(self, connection, key):
-        simple_obj = { key:1}
+        simple_obj = { key:1 }
         try:
             self.send(connection, simple_obj)
             self.print(f"+++ {key} obj sended")
@@ -35,7 +39,7 @@ class ConnectionThread(ConnectionThreadBase):
             self.print(f"!!! {key} obj send failed")
 
 
-    def connection_loop(self, connection, conn_in_q, conn_out_q):
+    def connection_loop(self, connection, conn_in_q: pipe_queue, conn_out_q: pipe_queue):
         
         self.connect_ack = False
         self.disconnect_ack = False

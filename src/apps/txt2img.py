@@ -2,7 +2,6 @@ import time
 import numpy
 from PIL import Image
 
-# from src.core.utils.utils_thread import ConnectionThread
 from core.utils.utils_thread import ThreadWrap
 from core.threads.DiffusionClientThread import DiffusionClientThread
 from core.utils.utils import pil2simple_data, simple_data2pil
@@ -77,7 +76,7 @@ class ClientLogicThread(ThreadWrap):
         # TODO: to jest trochę krzywe, ale działa, na potrzeby testowego clienta nie ma się co ty m przejmować
         loop_cond = lambda r: not self.process_result(r) and self.run_cond
         result = None
-        
+
         while loop_cond(result):
             result = self.client_wrapper.get_server_info()
             time.sleep(0.01)

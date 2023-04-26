@@ -2,7 +2,6 @@ import time
 import numpy
 from PIL import Image, ImageDraw
 
-# from src.core.utils.utils_thread import ConnectionThread
 from core.utils.utils_thread import ThreadWrap
 from core.threads.DiffusionClientThread import DiffusionClientThread
 from core.utils.utils import pil2simple_data, simple_data2pil

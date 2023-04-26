@@ -1,6 +1,6 @@
 
 import socket, time
-from core.utils.utils_thread import ConnectionThread
+from core.threads.ConnectionThread import ConnectionThread
 from core.utils.utils_except import traceback_info
 
 class DiffusionClientThread(ConnectionThread):

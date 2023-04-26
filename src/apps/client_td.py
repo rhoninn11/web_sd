@@ -3,7 +3,6 @@ from PIL import Image
 import asyncio
 
 
-# from src.core.utils.utils_thread import ConnectionThread
 from core.utils.utils_thread import ThreadWrap
 from core.threads.DiffusionClientThread import DiffusionClientThread
 from core.threads.DiffusionServerThread import ServerThread

@@ -1,6 +1,6 @@
 
 import socket, time, select
-from core.utils.utils_thread import ConnectionThread
+from core.threads.ConnectionThread import ConnectionThread
 
 class ServerThread(ConnectionThread):
     def __init__(self, name):
