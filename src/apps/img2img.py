@@ -47,8 +47,15 @@ class ClientLogicThread(ThreadWrap):
         init_img = Image.open('fs/in/img.png').convert('RGB')
 
         command = { self.name: {
-                "img": pil2simple_data(init_img)  
-            }}
+                "img": pil2simple_data(init_img),
+                "config": {
+                    "prompt": "Sunny day over the sea",
+                    "prompt_negative": "boring skyscape",
+                    "power": 0.8,
+                    "seed": 7,
+                }
+            }
+        }
         return command
     
     def process_result(self, result):
@@ -60,7 +67,7 @@ class ClientLogicThread(ThreadWrap):
             if self.name in result:
                 simple_data_img = result[self.name]["img"]
                 pil_img = simple_data2pil(simple_data_img)
-                pil_img.save('fs/out/{self.name}.png')
+                pil_img.save(f'fs/out/{self.name}.png')
                 return True
 
         return False

@@ -12,25 +12,25 @@ from diffusers import (
 DEVICE = "cuda"
 NAME = "img2img"
 
-def init_img2img_pipeline():
+def init_img2img_pipeline(device=DEVICE):
     model_id = "stabilityai/stable-diffusion-2-base"
     scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
     pipe_img2img = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
-    pipe_img2img = pipe_img2img.to(DEVICE)
+    pipe_img2img = pipe_img2img.to(device)
     return pipe_img2img
 
 pipeline = []
 
-def init_generator(seed):
-    g_cuda = torch.Generator(device=DEVICE)
+def init_generator(seed, device=DEVICE):
+    g_cuda = torch.Generator(device=device)
     g_cuda.manual_seed(seed)
     return g_cuda
 
-def img2img(request_data, out_queue, step_callback=None):
+def img2img(request_data, out_queue, step_callback=None, device=DEVICE):
     
     if len(pipeline) == 0:
         print(f"+++ img2img initialization")
-        pipeline.append(init_img2img_pipeline())
+        pipeline.append(init_img2img_pipeline(device))
     
     tic = time.perf_counter()
     config = request_data[NAME]["config"]
@@ -40,7 +40,7 @@ def img2img(request_data, out_queue, step_callback=None):
         "prompt": config["prompt"],
         "strength": config["power"],
         "negative_prompt": config["prompt_negative"],
-        "generator": init_generator(42),
+        "generator": init_generator(config["seed"], device),
         "callback": step_callback,
         }
 

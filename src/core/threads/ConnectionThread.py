@@ -27,13 +27,16 @@ class ConnectionThread(ConnectionThreadBase):
 
         operate_normal = not is_connect and not is_disconnect   
         if operate_normal:
+            # self.print(f"+++ other obj recived")
+            # self.print(f"+++ {information_obj}")
+            
             out_pipe.queue_item(information_obj)
             
 
     def send_simple_obj(self, connection, key):
         simple_obj = { key:1 }
         try:
-            self.send(connection, simple_obj)
+            self.send(connection, simple_obj, id=1)
             self.print(f"+++ {key} obj sended")
         except:
             self.print(f"!!! {key} obj send failed")
@@ -43,8 +46,9 @@ class ConnectionThread(ConnectionThreadBase):
         
         self.connect_ack = False
         self.disconnect_ack = False
+        self.disconnect_flag = False
         self.send_simple_obj(connection, "connect")
-        while self.run_cond and not self.disconnect_ack:
+        while self.run_cond and not self.disconnect_ack and not self.disconnect_flag:
             
             progress = 0
             if conn_in_q.queue_len():

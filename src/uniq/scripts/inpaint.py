@@ -12,25 +12,25 @@ from diffusers import (
 DEVICE = "cuda"
 NAME = "inpaint"
 
-def init_inpt_img2img_pipeline():
+def init_inpt_img2img_pipeline(device=DEVICE):
     model_id = "stabilityai/stable-diffusion-2-inpainting"
     scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
     pipe_img2img = StableDiffusionInpaintPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
-    pipe_img2img = pipe_img2img.to(DEVICE)
+    pipe_img2img = pipe_img2img.to(device)
     return pipe_img2img
 
 pipeline = []
 
-def init_generator(seed):
-    g_cuda = torch.Generator(device=DEVICE)
+def init_generator(seed, device=DEVICE):
+    g_cuda = torch.Generator(device=device)
     g_cuda.manual_seed(seed)
     return g_cuda
 
-def inpaint(request_data, out_queue, step_callback=None):
+def inpaint(request_data, out_queue, step_callback=None, device=DEVICE):
     
     if len(pipeline) == 0:
         print(f"+++ inpaint initialization")
-        pipeline.append(init_inpt_img2img_pipeline())
+        pipeline.append(init_inpt_img2img_pipeline(device))
     
     tic = time.perf_counter()
 
@@ -43,6 +43,7 @@ def inpaint(request_data, out_queue, step_callback=None):
         "prompt": config["prompt"],
         "mask_image": mask_of_img,
         # "strength": config["power"],
+        "generator": init_generator(config["seed"], device),
         "negative_prompt": config["prompt_negative"],
         "callback": step_callback,
     }

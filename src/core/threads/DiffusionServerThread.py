@@ -18,6 +18,7 @@ class ServerThread(ConnectionThread):
 
     def run(self):
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         if self.port is None:
             raise Exception("!!! port not set")
@@ -38,5 +39,9 @@ class ServerThread(ConnectionThread):
                     print(f"+++ client left ({self.name})")
                 finally:
                     connection.close()
+                    time.sleep(0.5)
+                    print(f"+++ client connection closed?")
 
         tcp_socket.close()
+        time.sleep(0.5)
+        print(f"+++ tcp socket closed ?")

@@ -2,6 +2,7 @@
 from uniq.scripts.txt2Img import txt2img
 from uniq.scripts.img2Img import img2img
 from uniq.scripts.inpaint import inpaint
+from uniq.scripts.callback_testing_txt2img import callback_testing_txt2img
 
 
 class ScriptIndex():
@@ -27,9 +28,9 @@ class ScriptIndex():
         return True if self.detect_script_name(request) else False
     
     def _script_callback(self, step, timestep, queue):
-        progress = (1000-timestep)/1000.0*100.0
+        progress = float(f"{(1000-timestep)/1000.0}") # value as string to get rid of tensor
         text = f"step: {step}, progress: {progress:.2f}%"
-        msg = { "progress": text }
+        msg = { "progress": {"text": text, "value": progress} }
         queue.queue_item(msg)
     
     def run_script(self, request, out_queue):

@@ -41,7 +41,8 @@ class CentralLogicThread(ThreadWrap):
         no_config = {
                 "prompt": "stone marble covered with floral patterns chilling in fantasy realm",
                 "prompt_negative": "",
-                "power": 0.8
+                "power": 0.8,
+                "seed": 42,
             }
 
         self.config_pipe = pipe_queue("config")
@@ -51,6 +52,8 @@ class CentralLogicThread(ThreadWrap):
         }
         # istnieje potencjał na stworzenie klasy edge manager
         self.edge_manager = EdgeManager()
+        self.last_heartbeat_time = time.perf_counter()
+
         # istnieje potencjał na stworzenie klasy flow manager
         
     def new_config(self, new_config):
@@ -59,6 +62,8 @@ class CentralLogicThread(ThreadWrap):
     def manage_config_update(self):
         while self.config_pipe.queue_len():
             new_config = self.config_pipe.dequeue_item()
+            print(f"+++ new config received: {new_config}")
+
             edge_config = new_config["edge_config"]
             self.manage_edge(edge_config)
             self.config = new_config
@@ -105,6 +110,11 @@ class CentralLogicThread(ThreadWrap):
             self.out_queue.queue_item(edge_result)
             progress += 1
         return progress
+    
+    def send_heartbeat(self):
+        heartbeat = {"heartbeat": 1}
+        self.out_queue.queue_item(heartbeat)
+        return 1
 
     def try_return_edge_result(self):
         progress = 0
@@ -112,6 +122,18 @@ class CentralLogicThread(ThreadWrap):
             edge = self.edge_list[key]
             wrapper = edge["wrapper"]
             progress += self.pass_wrapper_work(wrapper)
+
+        return 0
+    
+    def send_one_heartbeat_per_second(self):
+        
+        now = time.perf_counter()
+        delta = now - self.last_heartbeat_time 
+        if delta > 1:
+            print(f"+++ sending heartbeat")
+            self.last_heartbeat_time = now
+            self.send_heartbeat()
+            return 1
 
         return 0
     
@@ -145,20 +167,36 @@ class CentralLogicThread(ThreadWrap):
         self.add_edges(hosts_to_add)
         self.remove_edges(hosts_to_remove)
 
+    def request_config_fill(self, request):
+        progress = 0
+        fn_name = SI.detect_script_name(request)
+        if fn_name:
+            if "config" not in request[fn_name]:
+                request[fn_name]["config"] = self.config["no_config"]
+            else:
+                # check if config has all no_config keys, if not fill with no_config
+                for key in self.config["no_config"]:
+                    if key not in request[fn_name]["config"]:
+                        request[fn_name]["config"][key] = self.config["no_config"][key]
+
+            progress += 1
+        return progress
+    def request_monit(self, request):
+        # print(f"+++ request: {request}")
+    
     def manage_flow(self):
         progress = 0
         wrapper = self.select_edge()
         if wrapper:
             request = self.select_request()
             if request:
-                fn_name = SI.detect_script_name(request)
-                if fn_name:
-                    if "config" not in request[fn_name]:
-                        request[fn_name]["config"] = self.config["no_config"]
+                # self.request_monit(request)
+                if self.request_config_fill(request):
                     wrapper.send_to_edge(request)
                     progress += 1
 
         progress += self.try_return_edge_result()
+        # progress += self.send_one_heartbeat_per_second()
         return progress
     
     def remove_edges(self, edges_to_remove):
