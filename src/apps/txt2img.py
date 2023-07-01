@@ -37,6 +37,9 @@ class ClientLogicThread(ThreadWrap):
         self.on_finish = None
         self.name = "txt2img"
 
+        self.sample_num = 4
+        self.result_count = 0
+
     def bind_wrapper(self, wrapper):
         self.client_wrapper = wrapper
     
@@ -46,10 +49,12 @@ class ClientLogicThread(ThreadWrap):
     def prepare_command(self):
         command = { self.name: { 
             "config": {
-                "prompt": "Sunny day over the sea",
+                "prompt": "Sunny day over the sea, pastel painting",
                 "prompt_negative": "boring skyscape",
                 "seed": 0,
-            } 
+                "samples": self.sample_num,
+            },
+            "metadata": { "id": "osiedle xd"},
         } }
         return command
     
@@ -60,13 +65,21 @@ class ClientLogicThread(ThreadWrap):
                 return False
 
             if self.name in result:
-                print("+++ eee yoo")
+                metadata = result[self.name]["metadata"]
+                print(f"+++ eee yoo {metadata}")
+
                 simple_data_img = result[self.name]["img"]
                 pil_img = simple_data2pil(simple_data_img)
-                pil_img.save(f"fs/out/{self.name}.png")
+                pil_img.save(f"fs/out/{self.name}_{self.result_count}.png")
                 return True
 
         return False
+    def loop_cond(self, result):
+        if self.process_result(result):
+            self.result_count += 1
+
+        finished = self.result_count >= self.sample_num
+        return not finished and self.run_cond
     
     def script(self):
         if self.client_wrapper == None:
@@ -75,11 +88,8 @@ class ClientLogicThread(ThreadWrap):
         command = self.prepare_command()
         self.client_wrapper.send_to_server(command)
         
-        # TODO: to jest trochę krzywe, ale działa, na potrzeby testowego clienta nie ma się co ty m przejmować
-        loop_cond = lambda r: not self.process_result(r) and self.run_cond
         result = None
-
-        while loop_cond(result):
+        while self.loop_cond(result):
             result = self.client_wrapper.get_server_info()
             time.sleep(0.01)
 

@@ -54,8 +54,6 @@ def config_run(request, step_callback, device, src_data, run_it):
     return run_in, run_out
 
 def config_runs(request, step_callback, device):
-
-   
     config = request["config"]
     runs_count = 4
     if "samples" in config:
@@ -76,16 +74,12 @@ def txt2img(request_data, out_queue, step_callback=None, device=DEVICE):
 
     pipeline_run = pipeline[0]
     for run_in, run_out in v_run_config:
-        tic = time.perf_counter()
 
         run_result = pipeline_run(**run_in)
         out_img = run_result.images[0]
         run_out["img"] = pil2simple_data(out_img)
-        
-        toc = time.perf_counter()
-        processing_time = toc - tic
-        # later add to timing
 
-        out_queue.queue_item(run_out)
+        result = { NAME: run_out }
+        out_queue.queue_item(result)
 
     
