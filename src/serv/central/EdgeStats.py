@@ -19,7 +19,7 @@ class EdgeStats():
             self.frame_time_history.pop(0)
 
     def _gen_timming_info(self, frame):
-        init_ts = frame[T]["ts"]
+        init_ts = frame["metadata"]["ts"]
         finish_ts = time.perf_counter()
         central_end_2_end_time = finish_ts - init_ts
         timming_text = f"+++ end 2 end processing time (central): {central_end_2_end_time:.3f}s"
@@ -34,7 +34,11 @@ class EdgeStats():
 
     def frame_timeing_init(self, frame):
         self.frame_in_process += 1
-        frame[T] = { "ts": time.perf_counter() }
+        
+        if "metadata" not in frame:
+            frame["metadata"] = {}
+
+        frame["metadata"]["ts"] = time.perf_counter()
 
     def get_frame_processed_num(self):
         return self.frame_processed

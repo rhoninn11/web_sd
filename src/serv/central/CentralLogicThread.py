@@ -172,8 +172,10 @@ class CentralLogicThread(ThreadWrap):
         fn_name = SI.detect_script_name(request)
         if fn_name:
             if "config" not in request[fn_name]:
+                print(f"+++ config missing in request")
                 request[fn_name]["config"] = self.config["no_config"]
             else:
+                print(f"+++ config in request")
                 # check if config has all no_config keys, if not fill with no_config
                 for key in self.config["no_config"]:
                     if key not in request[fn_name]["config"]:
@@ -182,7 +184,7 @@ class CentralLogicThread(ThreadWrap):
             progress += 1
         return progress
     def request_monit(self, request):
-        # print(f"+++ request: {request}")
+        print(f"+++ request: {request}")
     
     def manage_flow(self):
         progress = 0
@@ -190,7 +192,7 @@ class CentralLogicThread(ThreadWrap):
         if wrapper:
             request = self.select_request()
             if request:
-                # self.request_monit(request)
+                self.request_monit(request)
                 if self.request_config_fill(request):
                     wrapper.send_to_edge(request)
                     progress += 1

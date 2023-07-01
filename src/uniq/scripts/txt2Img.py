@@ -26,31 +26,66 @@ def init_generator(seed, device=DEVICE):
     g_cuda.manual_seed(seed)
     return g_cuda
 
-def txt2img(request_data, out_queue, step_callback=None, device=DEVICE):
-    
+def pipeline_sync(device):
     if len(pipeline) == 0:
         print(f"+++ txt2img initialization")
         pipeline.append(init_txt2img_pipeline(device))
-    
-    tic = time.perf_counter()
-     
-    config = request_data[NAME]["config"]
-    print(f"+++ txt2img config: {config}")
-    pipe_parameters = { 
+
+def config_run(request, step_callback, device, src_data, run_it):
+    config = request["config"]
+    metadata = request["metadata"]
+
+    run_in = { 
         "prompt": config["prompt"],
         "negative_prompt": config["prompt_negative"],
-        "generator": init_generator(config["seed"], device),
+        "generator": init_generator(config["seed"] + run_it, device),
         "callback": step_callback,
         }
-
-    script_pipeline = pipeline[0]
-    pipe_result = script_pipeline(**pipe_parameters)
-
-    out_img = pipe_result.images[0]
-    request_data[NAME] = { "img": pil2simple_data(out_img) }
     
-    toc = time.perf_counter()
-    processing_time = toc - tic
-    # later add to timing
+    run_out = {
+        "config": {
+            "prompt": config["prompt"],
+            "negative_prompt": config["prompt_negative"],
+            "seed": config["seed"] + run_it,
+        },
+        "metadata": metadata
+    }
 
-    out_queue.queue_item(request_data)
+    return run_in, run_out
+
+def config_runs(request, step_callback, device):
+
+   
+    config = request["config"]
+    runs_count = 4
+    if "samples" in config:
+        runs_count = config["samples"]
+    
+    v_run_config = []
+    for i in range(runs_count):
+        run_in_out = config_run(request, step_callback, device, None, i)
+        v_run_config.append(run_in_out)
+    
+    return v_run_config
+
+def txt2img(request_data, out_queue, step_callback=None, device=DEVICE):
+    pipeline_sync(device)
+    
+    txt2img = request_data[NAME]
+    v_run_config = config_runs(txt2img, step_callback, device)
+
+    pipeline_run = pipeline[0]
+    for run_in, run_out in v_run_config:
+        tic = time.perf_counter()
+
+        run_result = pipeline_run(**run_in)
+        out_img = run_result.images[0]
+        run_out["img"] = pil2simple_data(out_img)
+        
+        toc = time.perf_counter()
+        processing_time = toc - tic
+        # later add to timing
+
+        out_queue.queue_item(run_out)
+
+    

@@ -60,6 +60,7 @@ class ClientLogicThread(ThreadWrap):
                 return False
 
             if self.name in result:
+                print("+++ eee yoo")
                 simple_data_img = result[self.name]["img"]
                 pil_img = simple_data2pil(simple_data_img)
                 pil_img.save(f"fs/out/{self.name}.png")
