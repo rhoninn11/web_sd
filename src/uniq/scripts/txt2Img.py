@@ -2,20 +2,23 @@
 from core.utils.utils import pil2simple_data
 from core.utils.utils import simple_data2pil
 
+import os
 import torch, time
 from diffusers import (
-    StableDiffusionPipeline,
+    DiffusionPipeline,
     DDIMScheduler
 )
+
 
 # ale będzie trzeba rozwarzyć co zrobić jak są DWA
 DEVICE = "cuda"
 NAME = "txt2img"
 
 def init_txt2img_pipeline(device=DEVICE):
-    model_id = "stabilityai/stable-diffusion-2-1-base"
-    scheduler = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
-    pipe_txt2img = StableDiffusionPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
+    access_token = os.getenv('HF_TOKEN')
+    print(f'HF_TOKEN: {access_token}')
+    model_id = "stabilityai/stable-diffusion-xl-base-0.9"
+    pipe_txt2img = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16, variant="fp16", use_safetensors=True, token=access_token)
     pipe_txt2img = pipe_txt2img.to(device)
     return pipe_txt2img
 

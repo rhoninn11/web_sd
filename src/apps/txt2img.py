@@ -37,7 +37,7 @@ class ClientLogicThread(ThreadWrap):
         self.on_finish = None
         self.name = "txt2img"
 
-        self.sample_num = 4
+        self.sample_num = 1
         self.result_count = 0
 
     def bind_wrapper(self, wrapper):
