@@ -1,6 +1,6 @@
 import time
 
-from uniq.scripts.ScriptIndex import ScriptIndex
+from core.ScriptIndex import ScriptIndex
 SI = ScriptIndex()
 
 class EdgeStats():

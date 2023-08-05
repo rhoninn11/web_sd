@@ -1,5 +1,5 @@
 from core.threads.DiffusionServerThread import ServerThread
-from uniq.threads.SDiffusionThread import SDiffusionThread
+from serv.edge.SDiffusionThread import SDiffusionThread
 
 from core.system.MultiThreadingApp import MultiThreadingApp
  

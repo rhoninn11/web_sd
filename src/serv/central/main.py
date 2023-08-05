@@ -2,7 +2,7 @@
 from core.system.MultiThreadingApp import MultiThreadingApp
 from core.threads.DiffusionServerThread import ServerThread
 
-from uniq.threads.CentralGradioInterface import CentralGradioInterface
+from serv.central.CentralGradioInterface import CentralGradioInterface
 
 from serv.central.CentralLogicThread import CentralLogicThread
 

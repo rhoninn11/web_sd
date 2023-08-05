@@ -39,6 +39,7 @@ class ClientLogicThread(ThreadWrap):
 
         self.sample_num = 1
         self.result_count = 0
+        self.start_moment = None
 
     def bind_wrapper(self, wrapper):
         self.client_wrapper = wrapper
@@ -61,12 +62,15 @@ class ClientLogicThread(ThreadWrap):
     def process_result(self, result):
         if result:
             if "progress" in result:
+                if self.start_moment == None:
+                    self.start_moment = time.perf_counter()
                 print("Progress: ", result["progress"])
                 return False
 
             if self.name in result:
+                real_time = time.perf_counter() - self.start_moment
                 metadata = result[self.name]["metadata"]
-                print(f"+++ eee yoo {metadata}")
+                print(f"+++ eee yoo {metadata}, time: {real_time}")
 
                 simple_data_img = result[self.name]["img"]
                 pil_img = simple_data2pil(simple_data_img)

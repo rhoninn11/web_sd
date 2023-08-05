@@ -2,25 +2,19 @@
 from core.utils.utils import pil2simple_data
 from core.utils.utils import simple_data2pil
 
-import os
 import torch, time
-from diffusers import (
-    DiffusionPipeline,
-    DDIMScheduler
-)
+from PIL import Image, ImageDraw
+from diffusers import StableDiffusionXLInpaintPipeline
 
 
-# ale będzie trzeba rozwarzyć co zrobić jak są DWA
 DEVICE = "cuda"
-NAME = "txt2img"
+NAME = "inpaint"
 
-def init_txt2img_pipeline(device=DEVICE):
-    access_token = os.getenv('HF_TOKEN')
-    print(f'HF_TOKEN: {access_token}')
-    model_id = "stabilityai/stable-diffusion-xl-base-0.9"
-    pipe_txt2img = DiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16, variant="fp16", use_safetensors=True, token=access_token)
-    pipe_txt2img = pipe_txt2img.to(device)
-    return pipe_txt2img
+def init_inpt_img2img_pipeline(device=DEVICE):
+    model_id = "stabilityai/stable-diffusion-xl-base-1.0"
+    pipe_inpaint = StableDiffusionXLInpaintPipeline.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
+    pipe_inpaint = pipe_inpaint.to(device)
+    return pipe_inpaint
 
 pipeline = []
 
@@ -31,19 +25,24 @@ def init_generator(seed, device=DEVICE):
 
 def pipeline_sync(device):
     if len(pipeline) == 0:
-        print(f"+++ txt2img initialization")
-        pipeline.append(init_txt2img_pipeline(device))
+        print(f"+++ inpaint initialization")
+        pipeline.append(init_inpt_img2img_pipeline(device))
+
 
 def config_run(request, step_callback, device, src_data, run_it):
+    bulk = request["bulk"]
     config = request["config"]
     metadata = request["metadata"]
 
-    run_in = { 
+    run_in = {
+        "strength": config["power"],
+        "image": simple_data2pil(bulk["img"]),
+        "mask_image": simple_data2pil(bulk["mask"]),
         "prompt": config["prompt"],
         "negative_prompt": config["prompt_negative"],
         "generator": init_generator(config["seed"] + run_it, device),
         "callback": step_callback,
-        }
+    }
     
     run_out = {
         "config": {
@@ -51,14 +50,15 @@ def config_run(request, step_callback, device, src_data, run_it):
             "negative_prompt": config["prompt_negative"],
             "seed": config["seed"] + run_it,
         },
-        "metadata": metadata
+        "metadata": metadata,
+        "bulk":{},
     }
 
     return run_in, run_out
 
 def config_runs(request, step_callback, device):
     config = request["config"]
-    runs_count = 4
+    runs_count = 1
     if "samples" in config:
         runs_count = config["samples"]
     
@@ -69,20 +69,18 @@ def config_runs(request, step_callback, device):
     
     return v_run_config
 
-def txt2img(request_data, out_queue, step_callback=None, device=DEVICE):
+def inpaint(request_data, out_queue, step_callback=None, device=DEVICE):
     pipeline_sync(device)
-    
-    txt2img = request_data[NAME]
-    v_run_config = config_runs(txt2img, step_callback, device)
+
+    inpaint = request_data[NAME]
+    run_config_v = config_runs(inpaint, step_callback, device)
 
     pipeline_run = pipeline[0]
-    for run_in, run_out in v_run_config:
-
+    for run_in, run_out in run_config_v:
+        
         run_result = pipeline_run(**run_in)
         out_img = run_result.images[0]
-        run_out["img"] = pil2simple_data(out_img)
+        run_out["bulk"]["img"] = pil2simple_data(out_img)
 
         result = { NAME: run_out }
         out_queue.queue_item(result)
-
-    

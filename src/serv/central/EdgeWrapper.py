@@ -13,7 +13,7 @@ class EdgeWrapper():
     def send_to_edge(self, request):
         if self.client_thread:
             self.edge_stats.track_request(request)
-            print(f"+++ send_to_edge: {request}")
+            # print(f"+++ send_to_edge: {request}")
 
             in_queue = self.client_thread.in_queue
             in_queue.queue_item(request)

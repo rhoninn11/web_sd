@@ -7,7 +7,7 @@ from core.threads.DiffusionClientThread import DiffusionClientThread
 from serv.central.EdgeWrapper import EdgeStats
 from serv.central.EdgeWrapper import EdgeWrapper
 
-from uniq.scripts.ScriptIndex import ScriptIndex
+from core.ScriptIndex import ScriptIndex
 
 from core.utils.utils_logging import my_print
 SI = ScriptIndex()

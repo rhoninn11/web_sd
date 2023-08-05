@@ -14,11 +14,11 @@ def mask_image(img):
     mask_image = Image.new('RGB', (width, height), color='black')
     mask_draw_proxy = ImageDraw.Draw(mask_image)
 
-    size = int(width/2)
-    x0 = int(width/2) - size
-    x1 = int(width/2) + size
-    y0 = int(height/2) - size
-    y1 = int(height/2) + size
+    size = int(width/4)
+    x0 = int(width/4) - size
+    x1 = int(width/4) + size
+    y0 = int(height/4) - size
+    y1 = int(height/4) + size
     c_shape = (x0, y0, x1, y1)
     mask_draw_proxy.ellipse(c_shape, fill='white')
 
@@ -61,12 +61,20 @@ class ClientLogicThread(ThreadWrap):
 
     def prepare_command(self):
         init_img = Image.open('fs/in/img.png').convert('RGB')
-        mask_of_img = mask_image(init_img)
+        mask_of_img = Image.open('fs/in/img_mask.png').convert('RGB')
+        # mask_of_img = mask_image(init_img)
 
-        command = { self.name: {
+        command = { self.name: { 
+            "config": {
+                "prompt": "steve carell ride a grean horse",
+            },
+            "bulk":{
                 "img": pil2simple_data(init_img),
-                "img_mask": pil2simple_data(mask_of_img),
-            }}
+                "mask": pil2simple_data(mask_of_img),
+            },
+            "metadata": { "id": "osiedle xd"},
+        } }
+
         return command
     
     def process_result(self, result):
@@ -76,7 +84,7 @@ class ClientLogicThread(ThreadWrap):
                 return False
 
             if self.name in result:
-                simple_data_img = result[self.name]["img"]
+                simple_data_img = result[self.name]["bulk"]["img"]
                 pil_img = simple_data2pil(simple_data_img)
                 pil_img.save(f"fs/out/{self.name}.png")
                 return True

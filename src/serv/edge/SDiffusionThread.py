@@ -2,7 +2,7 @@
 import time
 
 from core.utils.utils_thread import ThreadWrap
-from uniq.scripts.ScriptIndex import ScriptIndex
+from core.ScriptIndex import ScriptIndex
 
 class SDiffusionThread(ThreadWrap):
     def __init__(self):

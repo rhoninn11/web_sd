@@ -47,12 +47,14 @@ class ClientLogicThread(ThreadWrap):
         init_img = Image.open('fs/in/img.png').convert('RGB')
 
         command = { self.name: {
-                "img": pil2simple_data(init_img),
                 "config": {
-                    "prompt": "Sunny day over the sea",
+                    "prompt": "steve carell ride a grean horse",
                     "prompt_negative": "boring skyscape",
                     "power": 0.8,
-                    "seed": 7,
+                    "seed": numpy.random.randint(0, 100),
+                },
+                "bulk": {
+                    "img": pil2simple_data(init_img),
                 }
             }
         }
@@ -65,7 +67,7 @@ class ClientLogicThread(ThreadWrap):
                 return False
 
             if self.name in result:
-                simple_data_img = result[self.name]["img"]
+                simple_data_img = result[self.name]["bulk"]["img"]
                 pil_img = simple_data2pil(simple_data_img)
                 pil_img.save(f'fs/out/{self.name}.png')
                 return True
