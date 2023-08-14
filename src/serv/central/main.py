@@ -11,10 +11,12 @@ class CentralServerApp(MultiThreadingApp):
         MultiThreadingApp.__init__(self)
     
     def run(self):
+        server_port = 6500
+        
         print("+++ app start")
         logic_thread = CentralLogicThread(name="client-logic")
         server_thread = ServerThread(name="central-server")
-        server_thread.config_host('localhost', 6500)
+        server_thread.config_host('localhost', server_port)
         gradio_thread = CentralGradioInterface() 
 
         server_thread.bind_worker(logic_thread)

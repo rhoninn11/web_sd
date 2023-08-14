@@ -41,6 +41,7 @@ def config_run(request, step_callback, device, src_data, run_it):
         "negative_prompt": config["prompt_negative"],
         "generator": init_generator(config["seed"] + run_it, device),
         "callback": step_callback,
+        "num_inference_steps": 10,
         }
     
     run_out = {
