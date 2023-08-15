@@ -23,12 +23,13 @@ class CentralGradioInterface():
         
         return "".join(message)
     
-    def prompt_config_chat(self, prompt, prompt_negative, power, seed, host_string, history):
+    def prompt_config_chat(self, prompt, prompt_negative, power, seed, steps, host_string, history):
         new_no_config = {
             "prompt": prompt,
             "prompt_negative": prompt_negative,
             "power": power,
             "seed": seed,
+            "steps": steps
         }
 
         new_edge_config = host_string_to_dict(host_string)
@@ -62,6 +63,7 @@ class CentralGradioInterface():
                     ),
                     gr.Slider(0.0, 1.0, value=0.8, label="power"),
                     gr.Slider(0, 100, label="seed"),
+                    gr.Slider(0, 70, value=10, label="steps"),
                     gr.Textbox(
                         label="sd_hosts",
                         lines=3,

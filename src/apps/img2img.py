@@ -1,5 +1,6 @@
 import time
 import numpy
+import json
 from PIL import Image
 
 from core.utils.utils_thread import ThreadWrap
@@ -46,7 +47,8 @@ class ClientLogicThread(ThreadWrap):
     def prepare_command(self):
         init_img = Image.open('fs/in/img.png').convert('RGB')
 
-        command = { self.name: {
+        sub_command = { self.name: {
+                "metadata": { "id": "from img2img.py"},
                 "config": {
                     "prompt": "steve carell ride a grean horse",
                     "prompt_negative": "boring skyscape",
@@ -58,15 +60,25 @@ class ClientLogicThread(ThreadWrap):
                 }
             }
         }
+
+        command = { 
+            "type": self.name,
+            "data": json.dumps(sub_command)
+        }
+
         return command
     
     def process_result(self, result):
         if result:
-            if "progress" in result:
+            if result["type"] == "progress":
+                result = json.loads(result["data"])
+
                 print("Progress: ", result["progress"])
                 return False
 
-            if self.name in result:
+            if result["type"] == self.name:
+                result = json.loads(result["data"])
+
                 simple_data_img = result[self.name]["bulk"]["img"]
                 pil_img = simple_data2pil(simple_data_img)
                 pil_img.save(f'fs/out/{self.name}.png')

@@ -5,17 +5,9 @@ from serv.edge.scripts.inpaint import inpaint
 import time
 
 DEVICE = "cuda"
-def callback_testing_txt2img(request_data, out_queue, step_callback=None, device=DEVICE):
-    print(f"+++ callback_testing_txt2img")
-    steps = 50
-    step_now = 0
-    while step_now < steps:
-        timestep = step_now/steps*1000.0
-        if(step_callback):
-            step_callback(step_now, timestep, None)
-        time.sleep(0.05)
-        print(f"+++ callback_testing_txt2img step: {step_now}")
-        step_now += 1
+
+def dummy_script(self, request, out_queue, step_callback=None):
+    pass
 
 class ScriptIndex():
     def __init__(self):
@@ -23,6 +15,7 @@ class ScriptIndex():
         self.scripts["txt2img"] = txt2img
         self.scripts["img2img"] = img2img
         self.scripts["inpaint"] = inpaint
+        self.scripts["progress"] = dummy_script
 
         self.available_scripts = list(self.scripts.keys())
 
@@ -39,16 +32,21 @@ class ScriptIndex():
     def has_script(self, request):
         return True if self.detect_script_name(request) else False
     
-    def _script_callback(self, step, timestep, queue):
+    def _script_callback(self, step, timestep, metadata, queue):
         progress = float(f"{(1000-timestep)/1000.0}") # value as string to get rid of tensor
-        text = f"step: {step}, progress: {progress:.2f}%"
-        msg = { "progress": {"text": text, "value": progress} }
+        msg = { 
+            "progress": {
+                "metadata": metadata,
+                "value": progress
+            }
+        }
         queue.queue_item(msg)
     
     def run_script(self, request, out_queue):
         script_name = self.detect_script_name(request)
         if script_name:
             script = self.scripts[script_name]
-            cb = lambda step, timestep, _: self._script_callback(step, timestep, out_queue)
+            metadata =  request[script_name]["metadata"]
+            cb = lambda step, timestep, _: self._script_callback(step, timestep, metadata, out_queue)
             script(request, out_queue, cb)
         return

@@ -1,5 +1,6 @@
 import time
 import numpy
+import json
 from PIL import Image, ImageDraw
 
 from core.utils.utils_thread import ThreadWrap
@@ -64,16 +65,22 @@ class ClientLogicThread(ThreadWrap):
         mask_of_img = Image.open('fs/in/img_mask.png').convert('RGB')
         # mask_of_img = mask_image(init_img)
 
-        command = { self.name: { 
-            "config": {
-                "prompt": "steve carell ride a grean horse",
-            },
-            "bulk":{
-                "img": pil2simple_data(init_img),
-                "mask": pil2simple_data(mask_of_img),
-            },
-            "metadata": { "id": "osiedle xd"},
-        } }
+        sub_command = { self.name: { 
+                "metadata": { "id": "from inpaint.py"},
+                "config": {
+                    "prompt": "steve carell ride a grean horse",
+                },
+                "bulk":{
+                    "img": pil2simple_data(init_img),
+                    "mask": pil2simple_data(mask_of_img),
+                },
+            } 
+        }
+
+        command = { 
+            "type": self.name,
+            "data": json.dumps(sub_command)
+        }
 
         return command
     

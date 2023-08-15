@@ -1,5 +1,6 @@
 
 import time
+import json
 
 from core.utils.utils_thread import ThreadWrap, pipe_queue
 from core.threads.DiffusionClientThread import DiffusionClientThread
@@ -100,6 +101,15 @@ class CentralLogicThread(ThreadWrap):
             self.edge_list[key] = new_edge
             print(f"+++ spawned edge spawned {key}")
 
+    def postprocess_result(self, result):
+
+        json_content = json.dumps(result)
+        type = SI.detect_script_name(result)
+        result = { 
+            "type": type,
+            "data": json_content }
+        return result
+
     def pass_wrapper_work(self, wrapper):
         progress = 0
         while True:
@@ -107,6 +117,7 @@ class CentralLogicThread(ThreadWrap):
             if edge_result is None:
                 break
             
+            edge_result = self.postprocess_result(edge_result)
             self.out_queue.queue_item(edge_result)
             progress += 1
         return progress
@@ -178,12 +189,20 @@ class CentralLogicThread(ThreadWrap):
                     if key not in request[fn_name]["config"]:
                         request[fn_name]["config"][key] = self.config["no_config"][key]
 
+    def preprocess_request(self, request):
+        # ===========
+        print(f"+++ request received: {request}")
+        json_content = request["data"]
+        request_data = json.loads(json_content)
+        return request_data
+
     def manage_flow(self):
         progress = 0
         wrapper = self.select_edge()
         if wrapper:
             request = self.select_request()
             if request:
+                request = self.preprocess_request(request)
                 self.request_config_fill(request)
                 wrapper.send_to_edge(request)
                 progress += 1

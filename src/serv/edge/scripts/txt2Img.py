@@ -41,7 +41,7 @@ def config_run(request, step_callback, device, src_data, run_it):
         "negative_prompt": config["prompt_negative"],
         "generator": init_generator(config["seed"] + run_it, device),
         "callback": step_callback,
-        "num_inference_steps": 10,
+        "num_inference_steps": config["steps"],
         }
     
     run_out = {
@@ -50,7 +50,8 @@ def config_run(request, step_callback, device, src_data, run_it):
             "negative_prompt": config["prompt_negative"],
             "seed": config["seed"] + run_it,
         },
-        "metadata": metadata
+        "metadata": metadata,
+        "bulk": {}
     }
 
     return run_in, run_out
@@ -79,7 +80,7 @@ def txt2img(request_data, out_queue, step_callback=None, device=DEVICE):
 
         run_result = pipeline_run(**run_in)
         out_img = run_result.images[0]
-        run_out["img"] = pil2simple_data(out_img)
+        run_out["bulk"]["img"] = pil2simple_data(out_img)
 
         result = { NAME: run_out }
         out_queue.queue_item(result)

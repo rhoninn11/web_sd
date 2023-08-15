@@ -1,5 +1,6 @@
 import time
 import numpy
+import json
 from PIL import Image
 
 from core.utils.utils_thread import ThreadWrap
@@ -48,31 +49,43 @@ class ClientLogicThread(ThreadWrap):
         self.on_finish = callback
 
     def prepare_command(self):
-        command = { self.name: { 
-            "config": {
-                "prompt": "Sunny day over the sea, pastel painting",
-                "prompt_negative": "boring skyscape",
-                "seed": 0,
-                "samples": self.sample_num,
-            },
-            "metadata": { "id": "osiedle xd"},
-        } }
+        sub_command = { self.name: { 
+                "metadata": { "id": "from txt2img.py"},
+                "config": {
+                    "prompt": "Sunny day over the sea, pastel painting",
+                    "prompt_negative": "boring skyscape",
+                    "seed": 0,
+                    "samples": self.sample_num,
+                },
+            } 
+        }
+
+        command = { 
+            "type": self.name,
+            "data": json.dumps(sub_command)
+        }
+
         return command
     
     def process_result(self, result):
         if result:
-            if "progress" in result:
+            if result["type"] == "progress":
+                result = json.loads(result["data"])
+                
                 if self.start_moment == None:
                     self.start_moment = time.perf_counter()
                 print("Progress: ", result["progress"])
                 return False
 
-            if self.name in result:
+            if result["type"] == self.name:
+                result = json.loads(result["data"])
+
                 real_time = time.perf_counter() - self.start_moment
                 metadata = result[self.name]["metadata"]
                 print(f"+++ eee yoo {metadata}, time: {real_time}")
 
-                simple_data_img = result[self.name]["img"]
+                bulk_data = result[self.name]["bulk"]
+                simple_data_img = bulk_data["img"]
                 pil_img = simple_data2pil(simple_data_img)
                 pil_img.save(f"fs/out/{self.name}_{self.result_count}.png")
                 return True
