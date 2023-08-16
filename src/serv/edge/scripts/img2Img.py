@@ -47,6 +47,8 @@ def config_run(request, step_callback, device, src_data, run_it):
             "prompt": config["prompt"],
             "negative_prompt": config["prompt_negative"],
             "seed": config["seed"] + run_it,
+            "power": config["power"],
+            "samples": 1,
         },
         "metadata": metadata,
         "bulk":{},
