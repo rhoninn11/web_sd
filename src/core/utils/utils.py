@@ -53,6 +53,7 @@ def pil2simple_data(pil_img):
     img_bytes = pil_img.tobytes()
     img_base64 = base64.b64encode(img_bytes)
     simple_data =  {
+        "id": -1,
         "img64": img_base64.decode('ascii'),
         "x": pil_img.size[0],
         "y": pil_img.size[1],
