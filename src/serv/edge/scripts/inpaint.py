@@ -2,32 +2,32 @@
 from core.utils.utils import pil2simple_data
 from core.utils.utils import simple_data2pil
 
-import torch, time
-from PIL import Image, ImageDraw
-from diffusers import StableDiffusionXLInpaintPipeline
+from serv.edge.scripts.common import init_generator
+from diffusers import StableDiffusionXLInpaintPipeline, StableDiffusionXLPipeline
 
 
-DEVICE = "cuda"
 NAME = "inpaint"
 
-def init_inpt_img2img_pipeline(device=DEVICE):
-    model_id = "stabilityai/stable-diffusion-xl-base-1.0"
-    pipe_inpaint = StableDiffusionXLInpaintPipeline.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
+def init_inpaint_img2img_pipeline(base_pipeline: StableDiffusionXLPipeline, device):
+    pipe_inpaint = StableDiffusionXLInpaintPipeline(
+        vae=base_pipeline.vae,
+        unet=base_pipeline.unet,
+        tokenizer=base_pipeline.tokenizer,
+        tokenizer_2=base_pipeline.tokenizer_2,
+        text_encoder=base_pipeline.text_encoder,
+        text_encoder_2=base_pipeline.text_encoder_2,
+        scheduler=base_pipeline.scheduler,
+    )
     pipe_inpaint = pipe_inpaint.to(device)
     return pipe_inpaint
 
 pipeline = []
 
-def init_generator(seed, device=DEVICE):
-    g_cuda = torch.Generator(device=device)
-    g_cuda.manual_seed(seed)
-    return g_cuda
-
-def pipeline_sync(device):
+def pipeline_sync(base_pipeline: StableDiffusionXLPipeline, device):
     if len(pipeline) == 0:
-        print(f"+++ inpaint initialization")
-        pipeline.append(init_inpt_img2img_pipeline(device))
-
+        print(f"+++ stub inpaint pipeline from base pipeline")
+        new_pipeline = init_inpaint_img2img_pipeline(base_pipeline, device)
+        pipeline.append(new_pipeline)
 
 def config_run(request, step_callback, device, src_data, run_it):
     bulk = request["bulk"]
@@ -71,8 +71,8 @@ def config_runs(request, step_callback, device):
     
     return v_run_config
 
-def inpaint(request_data, out_queue, step_callback=None, device=DEVICE):
-    pipeline_sync(device)
+def inpaint(request_data, out_queue, step_callback=None, base_pipeline=None, device=None):
+    pipeline_sync(base_pipeline, device)
 
     inpaint = request_data[NAME]
     run_config_v = config_runs(inpaint, step_callback, device)

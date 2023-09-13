@@ -10,7 +10,9 @@ from serv.central.EdgeWrapper import EdgeWrapper
 
 from core.ScriptIndex import ScriptIndex
 
-from core.utils.utils_logging import my_print
+from core.utils.utils_logging import cut_string
+from core.utils.utils_logging import trim_obj
+
 SI = ScriptIndex()
 
 class EdgeManager():
@@ -191,7 +193,7 @@ class CentralLogicThread(ThreadWrap):
 
     def preprocess_request(self, request):
         # ===========
-        print(f"+++ request received: {request}")
+        print(f"+++ request received: {trim_obj(request)}")
         json_content = request["data"]
         request_data = json.loads(json_content)
         return request_data

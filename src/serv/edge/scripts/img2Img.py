@@ -2,44 +2,50 @@
 from core.utils.utils import pil2simple_data
 from core.utils.utils import simple_data2pil
 
-import torch, time
-from diffusers import StableDiffusionXLImg2ImgPipeline
+from serv.edge.scripts.common import init_generator
+from diffusers import StableDiffusionXLImg2ImgPipeline, StableDiffusionXLPipeline
 
-# ale będzie trzeba rozwarzyć co zrobić jak są DWA
-DEVICE = "cuda"
+
 NAME = "img2img"
 
-def init_img2img_pipeline(device=DEVICE):
-    model_id = "stabilityai/stable-diffusion-xl-base-1.0"
-    pipe_img2img = StableDiffusionXLImg2ImgPipeline.from_pretrained(model_id, torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
+def init_img2img_pipeline(base_pipeline: StableDiffusionXLPipeline, device):
+    pipe_img2img = StableDiffusionXLImg2ImgPipeline(
+        vae=base_pipeline.vae,
+        unet=base_pipeline.unet,
+        tokenizer=base_pipeline.tokenizer,
+        tokenizer_2=base_pipeline.tokenizer_2,
+        text_encoder=base_pipeline.text_encoder,
+        text_encoder_2=base_pipeline.text_encoder_2,
+        scheduler=base_pipeline.scheduler,
+    )
     pipe_img2img = pipe_img2img.to(device)
     return pipe_img2img
 
 pipeline = []
 
-def init_generator(seed, device=DEVICE):
-    g_cuda = torch.Generator(device=device)
-    g_cuda.manual_seed(seed)
-    return g_cuda
 
-def pipeline_sync(device):
+def pipeline_sync(base_pipeline: StableDiffusionXLPipeline, device):
     if len(pipeline) == 0:
-        print(f"+++ img2img initialization")
-        pipeline.append(init_img2img_pipeline(device))
+        print(f"+++ stub img2img pipeline from base pipeline")
+        new_pipeline = init_img2img_pipeline(base_pipeline, device)
+        pipeline.append(new_pipeline)
 
 
 def config_run(request, step_callback, device, src_data, run_it):
     bulk = request["bulk"]
     config = request["config"]
     metadata = request["metadata"]
-
+    print(f"+++ img2img config_run: {config}")
     run_in = {
         "strength": config["power"],
         "image": simple_data2pil(bulk["img"]),
+        
         "prompt": config["prompt"],
         "negative_prompt": config["prompt_negative"],
+
         "generator": init_generator(config["seed"] + run_it, device),
         "callback": step_callback,
+        "num_inference_steps": config["steps"],
         }
     
     run_out = {
@@ -69,8 +75,8 @@ def config_runs(request, step_callback, device):
     
     return v_run_config
 
-def img2img(request_data, out_queue, step_callback=None, device=DEVICE):
-    pipeline_sync(device)
+def img2img(request_data, out_queue, step_callback=None, base_pipeline=None, device=None):
+    pipeline_sync(base_pipeline, device)
 
     img2img = request_data[NAME]
     run_config_v = config_runs(img2img, step_callback, device)
