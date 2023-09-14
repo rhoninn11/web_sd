@@ -19,6 +19,7 @@ def init_img2img_pipeline(base_pipeline: StableDiffusionXLPipeline, device):
         scheduler=base_pipeline.scheduler,
     )
     pipe_img2img = pipe_img2img.to(device)
+    pipe_img2img.enable_vae_tiling()
     return pipe_img2img
 
 pipeline = []

@@ -19,6 +19,7 @@ def init_inpaint_img2img_pipeline(base_pipeline: StableDiffusionXLPipeline, devi
         scheduler=base_pipeline.scheduler,
     )
     pipe_inpaint = pipe_inpaint.to(device)
+    pipe_inpaint.enable_vae_tiling()
     return pipe_inpaint
 
 pipeline = []
