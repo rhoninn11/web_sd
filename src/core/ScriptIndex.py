@@ -5,8 +5,6 @@ from serv.edge.scripts.inpaint import inpaint
 from serv.edge.base_pipeline import load_base_pipeline
 import time
 
-DEVICE = "cuda"
-
 def dummy_script(self, request, out_queue, step_callback=None):
     pass
 
@@ -21,6 +19,10 @@ class ScriptIndex():
         self.available_scripts = list(self.scripts.keys())
         self.pipeline_src = None
         self.pipeline_device = None
+        self.device = "cuda"
+
+    def set_device(self, device):
+        self.device = device
         
 
     def get_name_list(self):
@@ -47,12 +49,11 @@ class ScriptIndex():
         queue.queue_item(msg)
 
     def get_base_pipeline(self):
-        device = "cuda"
         model_id = "stabilityai/stable-diffusion-xl-base-1.0"
 
         if self.pipeline_src is None:
-            self.pipeline_src = load_base_pipeline(model_id, device)
-            self.pipeline_device = device
+            self.pipeline_src = load_base_pipeline(model_id, self.device)
+            self.pipeline_device = self.device
 
         return self.pipeline_src,  self.pipeline_device
 

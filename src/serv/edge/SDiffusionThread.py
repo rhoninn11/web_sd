@@ -4,10 +4,12 @@ import time
 from core.utils.utils_thread import ThreadWrap
 from core.ScriptIndex import ScriptIndex
 
+
 class SDiffusionThread(ThreadWrap):
-    def __init__(self):
+    def __init__(self, device):
         ThreadWrap.__init__(self)
         self.script_index = ScriptIndex()
+        self.script_index.set_device(device)
 
     def process_request(self, request):
         si = self.script_index
