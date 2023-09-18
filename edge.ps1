@@ -1,1 +1,1 @@
-python src/serv/edge/main.py
+python src/serv/edge/main.py 6203 cuda:0
