@@ -9,6 +9,9 @@ class EdgeStats():
         self.req_in_process = 0
         self.req_time_history = []
 
+    def __str__(self):
+        return f"EdgeStats: req_count: {self.req_count} req_in_process: {self.req_in_process}"
+
     def _get_request_processed_num(self):
         return self.req_count
 
@@ -25,6 +28,7 @@ class EdgeStats():
 
     def request_metadata(self, request):
         fn_name = SI.detect_script_name(request)
+        print(f"+++ request_metadata: {fn_name}")
         metadata = {}
         if fn_name:
             if "metadata" not in request[fn_name]:
@@ -66,7 +70,7 @@ class EdgeStats():
     def summarize_result(self, result):
         keys = result.keys()
         print(f"+++ summarize_result: {keys}")
-                    
-        metadata = self.request_metadata(result)
-        if "ts" in metadata:
-            self._request_processed(result)
+        if SI.stats_detect_script_name(result):
+            metadata = self.request_metadata(result)
+            if "ts" in metadata:
+                self._request_processed(result)

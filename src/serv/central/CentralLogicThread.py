@@ -158,7 +158,7 @@ class CentralLogicThread(ThreadWrap):
             edge = self.edge_list[key]
             wrapper = edge["wrapper"]
             if not wrapper.is_edge_processing():
-                return wrapper
+                return edge
 
         return None
     
@@ -200,9 +200,11 @@ class CentralLogicThread(ThreadWrap):
 
     def manage_flow(self):
         progress = 0
-        wrapper = self.select_edge()
-        if wrapper:
+        edge = self.select_edge()
+        if edge:
+            wrapper = edge["wrapper"]
             request = self.select_request()
+            print(f"+++ {wrapper.edge_stats}")
             if request:
                 request = self.preprocess_request(request)
                 self.request_config_fill(request)

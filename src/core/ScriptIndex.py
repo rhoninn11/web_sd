@@ -16,6 +16,8 @@ class ScriptIndex():
         self.scripts["inpaint"] = inpaint
         self.scripts["progress"] = dummy_script
 
+        self.img_result_scripts = ["txt2img", "img2img", "inpaint"]
+
         self.available_scripts = list(self.scripts.keys())
         self.pipeline_src = None
         self.pipeline_device = None
@@ -27,6 +29,13 @@ class ScriptIndex():
 
     def get_name_list(self):
         return self.available_scripts
+    
+    def stats_detect_script_name(self, request):
+        for key in self.img_result_scripts:
+            if key in request:
+                return key
+            
+        return None
     
     def detect_script_name(self, request):
         for key in self.scripts:
