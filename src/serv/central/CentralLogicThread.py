@@ -204,7 +204,6 @@ class CentralLogicThread(ThreadWrap):
         if edge:
             wrapper = edge["wrapper"]
             request = self.select_request()
-            print(f"+++ {wrapper.edge_stats}")
             if request:
                 request = self.preprocess_request(request)
                 self.request_config_fill(request)
