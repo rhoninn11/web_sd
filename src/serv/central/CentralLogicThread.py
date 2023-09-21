@@ -35,6 +35,34 @@ class EdgeManager():
             "stats": EdgeStats()
         }
         return edge_instance
+    
+class CentralStats():
+    def __init__(self):
+        self.request_counts = {}
+        self.my_stats_display = time.perf_counter()
+
+    def __str__(self):
+        info = []
+        info.append(f"----- OUT_STATS -----\n")
+        for key in self.request_counts:
+            info.append(f"{key}: {self.request_counts[key]}\n")
+        info.append(f"----- --------- -----\n")
+
+        return "".join(info)
+    
+    def add(self, name):
+        if name not in self.request_counts:
+            self.request_counts[name] = 0
+
+        self.request_counts[name] += 1
+
+    def show_periodicaly(self):
+        now = time.perf_counter()
+        delta = now - self.my_stats_display
+        if delta > 5:
+            self.my_stats_display = now
+            print(self)
+
 
 class CentralLogicThread(ThreadWrap):
     def __init__(self, name="noname"):
@@ -56,6 +84,9 @@ class CentralLogicThread(ThreadWrap):
         # istnieje potencjał na stworzenie klasy edge manager
         self.edge_manager = EdgeManager()
         self.last_heartbeat_time = time.perf_counter()
+
+        self.my_stats = CentralStats()
+        
 
         # istnieje potencjał na stworzenie klasy flow manager
         
@@ -107,6 +138,7 @@ class CentralLogicThread(ThreadWrap):
 
         json_content = json.dumps(result)
         type = SI.detect_script_name(result)
+        self.my_stats.add(type)
         result = { 
             "type": type,
             "data": json_content }
@@ -234,8 +266,10 @@ class CentralLogicThread(ThreadWrap):
             progress += self.manage_config_update()
             progress += self.manage_flow()
 
+            self.my_stats.show_periodicaly()
             if not progress:
                 time.sleep(0.1)
+                
 
         self.remove_edges(self.edge_list)
 
