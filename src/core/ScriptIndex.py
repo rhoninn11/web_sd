@@ -59,9 +59,10 @@ class ScriptIndex():
 
     def get_base_pipeline(self):
         model_id = "stabilityai/stable-diffusion-xl-base-1.0"
+        refiner_id = "stabilityai/stable-diffusion-xl-refiner-1.0"
 
         if self.pipeline_src is None:
-            self.pipeline_src = load_base_pipeline(model_id, self.device)
+            self.pipeline_src = load_base_pipeline(model_id, refiner_id, self.device)
             self.pipeline_device = self.device
 
         return self.pipeline_src,  self.pipeline_device
@@ -72,6 +73,6 @@ class ScriptIndex():
             script = self.scripts[script_name]
             metadata =  request[script_name]["metadata"]
             cb = lambda step, timestep, _: self._script_callback(step, timestep, metadata, out_queue)
-            base_pipe, device = self.get_base_pipeline()
-            script(request, out_queue, cb, base_pipe, device)
+            src_pipelines, device = self.get_base_pipeline()
+            script(request, out_queue, cb, src_pipelines, device)
         return

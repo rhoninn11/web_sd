@@ -69,7 +69,7 @@ class EdgeStats():
 
     def summarize_result(self, result):
         keys = result.keys()
-        print(f"+++ summarize_result: {keys}")
+        # print(f"+++ summarize_result: {keys}")
         if SI.stats_detect_script_name(result):
             metadata = self.request_metadata(result)
             if "ts" in metadata:

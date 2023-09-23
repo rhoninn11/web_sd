@@ -3,12 +3,12 @@ from core.utils.utils import pil2simple_data
 from core.utils.utils import simple_data2pil
 
 from serv.edge.scripts.common import init_generator
-from diffusers import StableDiffusionXLInpaintPipeline, StableDiffusionXLPipeline
+from diffusers import StableDiffusionXLInpaintPipeline, StableDiffusionXLPipeline, AutoPipelineForInpainting
 
 
 NAME = "inpaint"
 
-def init_inpaint_img2img_pipeline(base_pipeline: StableDiffusionXLPipeline, device):
+def init_inpaint_img2img_pipeline(base_pipeline: StableDiffusionXLPipeline, refiner_pipeline: StableDiffusionXLPipeline, device):
     pipe_inpaint = StableDiffusionXLInpaintPipeline(
         vae=base_pipeline.vae,
         unet=base_pipeline.unet,
@@ -18,32 +18,64 @@ def init_inpaint_img2img_pipeline(base_pipeline: StableDiffusionXLPipeline, devi
         text_encoder_2=base_pipeline.text_encoder_2,
         scheduler=base_pipeline.scheduler,
     )
-    pipe_inpaint = pipe_inpaint.to(device)
     pipe_inpaint.enable_vae_tiling()
-    return pipe_inpaint
+
+    pipe_inpaint_refiner = AutoPipelineForInpainting.from_pipe(refiner_pipeline)
+    pipe_inpaint_refiner.enable_vae_tiling()
+    return pipe_inpaint, pipe_inpaint_refiner
 
 pipeline = []
 
-def pipeline_sync(base_pipeline: StableDiffusionXLPipeline, device):
+def pipeline_sync(base_pipeline: StableDiffusionXLPipeline, refiner_pipeline: StableDiffusionXLPipeline, device):
     if len(pipeline) == 0:
-        print(f"+++ stub inpaint pipeline from base pipeline")
-        new_pipeline = init_inpaint_img2img_pipeline(base_pipeline, device)
-        pipeline.append(new_pipeline)
+        print(f"+++ stub inpaint from base pipeline")
+        inpaint_pipes = init_inpaint_img2img_pipeline(base_pipeline, refiner_pipeline, device)
+        pipeline.append(inpaint_pipes)
 
 def config_run(request, step_callback, device, src_data, run_it):
     bulk = request["bulk"]
     config = request["config"]
     metadata = request["metadata"]
 
+    expert_switch = 0.75
+    config_power = config["power"]
+    if config_power < (1.0 - expert_switch):
+        expert_switch = 1 - config_power
+
+    mask = simple_data2pil(bulk["mask"])
+
     run_in = {
-        "strength": config["power"],
+        "strength": config_power,
         "image": simple_data2pil(bulk["img"]),
-        "mask_image": simple_data2pil(bulk["mask"]),
+        "mask_image": mask,
+
+        
         "prompt": config["prompt"],
         "negative_prompt": config["prompt_negative"],
+
         "generator": init_generator(config["seed"] + run_it, device),
         "callback": step_callback,
+        "num_inference_steps": config["steps"],
+        # for moe 
+        "output_type": "latent",
+        "denoising_end": expert_switch,
     }
+    
+    run_in_ref = {
+        "strength": config_power,
+        "image": "blanc yet",
+        "mask_image": mask,
+
+        "prompt": config["prompt"],
+        "negative_prompt": config["prompt_negative"],
+        
+        "generator": init_generator(config["seed"] + run_it, device),
+        "callback": step_callback,
+        "num_inference_steps": config["steps"],
+        #for moe
+        "denoising_start": expert_switch,
+        }
+
     
     run_out = {
         "config": {
@@ -57,7 +89,7 @@ def config_run(request, step_callback, device, src_data, run_it):
         "bulk":{},
     }
 
-    return run_in, run_out
+    return (run_in, run_in_ref), run_out
 
 def config_runs(request, step_callback, device):
     config = request["config"]
@@ -72,16 +104,20 @@ def config_runs(request, step_callback, device):
     
     return v_run_config
 
-def inpaint(request_data, out_queue, step_callback=None, base_pipeline=None, device=None):
-    pipeline_sync(base_pipeline, device)
+def inpaint(request_data, out_queue, step_callback=None, src_pipelines=None, device=None):
+    pipeline_sync(src_pipelines[0], src_pipelines[1], device)
 
     inpaint = request_data[NAME]
     run_config_v = config_runs(inpaint, step_callback, device)
 
-    pipeline_run = pipeline[0]
-    for run_in, run_out in run_config_v:
+    pipeline_run, refiner_run = pipeline[0]
+    for pipeline_ins, run_out in run_config_v:
+        run_in, run_in_ref = pipeline_ins
         
         run_result = pipeline_run(**run_in)
+        run_in_ref["image"] = run_result.images[0]
+
+        run_result = refiner_run(**run_in_ref)
         out_img = run_result.images[0]
         run_out["bulk"]["img"] = pil2simple_data(out_img)
 

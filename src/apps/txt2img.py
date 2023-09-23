@@ -52,8 +52,8 @@ class ClientLogicThread(ThreadWrap):
         sub_command = { self.name: { 
                 "metadata": { "id": "from txt2img.py"},
                 "config": {
-                    "prompt": "Sunny day over the sea, pastel painting",
-                    "prompt_negative": "boring skyscape",
+                    "prompt": "Steve Carell as a pirate, he ia a plump, stuffed shirt with big belly",
+                    "prompt_negative": "boring skyscape, glasses",
                     "seed": 0,
                     "samples": self.sample_num,
                 },

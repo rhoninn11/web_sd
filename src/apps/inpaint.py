@@ -68,7 +68,10 @@ class ClientLogicThread(ThreadWrap):
         sub_command = { self.name: { 
                 "metadata": { "id": "from inpaint.py"},
                 "config": {
-                    "prompt": "steve carell ride a grean horse",
+                    "prompt": "big belly pirat, hairy belly button",
+                    "prompt_negative": "boring skyscape",
+                    "seed": 0,
+                    "power": 0.8,
                 },
                 "bulk":{
                     "img": pil2simple_data(init_img),
@@ -86,14 +89,18 @@ class ClientLogicThread(ThreadWrap):
     
     def process_result(self, result):
         if result:
-            if "progress" in result:
+            if result["type"] == "progress":
+                result = json.loads(result["data"])
+
                 print("Progress: ", result["progress"])
                 return False
 
-            if self.name in result:
+            if result["type"] == self.name:
+                result = json.loads(result["data"])
+
                 simple_data_img = result[self.name]["bulk"]["img"]
                 pil_img = simple_data2pil(simple_data_img)
-                pil_img.save(f"fs/out/{self.name}.png")
+                pil_img.save(f'fs/out/{self.name}.png')
                 return True
 
         return False

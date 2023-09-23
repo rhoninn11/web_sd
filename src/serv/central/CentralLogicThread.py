@@ -28,6 +28,7 @@ class EdgeManager():
 
         new_client_wrapper = EdgeWrapper()
         new_client_wrapper.bind_client_thread(new_client_thread)
+        new_client_thread.bind_e_connect_cb(new_client_wrapper.e_connect_changed)
 
         edge_instance = { 
             "wrapper": new_client_wrapper,
@@ -189,7 +190,7 @@ class CentralLogicThread(ThreadWrap):
         for key in self.edge_list:
             edge = self.edge_list[key]
             wrapper = edge["wrapper"]
-            if not wrapper.is_edge_processing():
+            if not wrapper.ready_to_accept_task():
                 return edge
 
         return None
@@ -266,7 +267,7 @@ class CentralLogicThread(ThreadWrap):
             progress += self.manage_config_update()
             progress += self.manage_flow()
 
-            self.my_stats.show_periodicaly()
+            # self.my_stats.show_periodicaly()
             if not progress:
                 time.sleep(0.1)
                 

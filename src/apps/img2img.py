@@ -50,9 +50,9 @@ class ClientLogicThread(ThreadWrap):
         sub_command = { self.name: {
                 "metadata": { "id": "from img2img.py"},
                 "config": {
-                    "prompt": "steve carell ride a grean horse",
-                    "prompt_negative": "boring skyscape",
-                    "power": 0.8,
+                    "prompt": "vase with flowers",
+                    "prompt_negative": "monochromatic",
+                    "power": 0.15,
                     "seed": numpy.random.randint(0, 100),
                 },
                 "bulk": {
