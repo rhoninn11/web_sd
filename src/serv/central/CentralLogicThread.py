@@ -226,7 +226,7 @@ class CentralLogicThread(ThreadWrap):
 
     def preprocess_request(self, request):
         # ===========
-        print(f"+++ request received: {trim_obj(request)}")
+        # print(f"+++ request received: {trim_obj(request)}")
         json_content = request["data"]
         request_data = json.loads(json_content)
         return request_data
